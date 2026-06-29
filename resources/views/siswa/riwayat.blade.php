@@ -94,6 +94,46 @@
                 </div>
             </form>
 
+            <!-- Export Buttons -->
+            <div class="d-flex flex-wrap gap-2 mb-4 align-items-center">
+                <span class="small fw-semibold text-secondary me-2"><i class="bi bi-download me-1"></i>Unduh Rekap:</span>
+
+                @php
+                    $exportParams = http_build_query(array_filter([
+                        'tgl_mulai' => $tglMulai ?? '',
+                        'tgl_akhir' => $tglAkhir ?? '',
+                    ]));
+                @endphp
+
+                <!-- Export Kehadiran -->
+                <a href="{{ route('siswa.export.kehadiran') }}{{ $exportParams ? '?'.$exportParams : '' }}"
+                   class="btn btn-sm rounded-pill fw-semibold px-4"
+                   style="background:linear-gradient(135deg,#16a34a,#15803d);color:white;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s ease;box-shadow:0 2px 10px rgba(22,163,74,.3);"
+                   onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(22,163,74,.45)';"
+                   onmouseout="this.style.transform='';this.style.boxShadow='0 2px 10px rgba(22,163,74,.3)';">
+                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> Export Kehadiran
+                    @if($tglMulai || $tglAkhir)
+                        <span class="badge bg-white text-success ms-1" style="font-size:.65rem;">Filtered</span>
+                    @endif
+                </a>
+
+                <!-- Export Jurnal -->
+                <a href="{{ route('siswa.export.jurnal') }}{{ $exportParams ? '?'.$exportParams : '' }}"
+                   class="btn btn-sm rounded-pill fw-semibold px-4"
+                   style="background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:all .2s ease;box-shadow:0 2px 10px rgba(37,99,235,.3);"
+                   onmouseover="this.style.transform='translateY(-1px)';this.style.boxShadow='0 4px 16px rgba(37,99,235,.45)';"
+                   onmouseout="this.style.transform='';this.style.boxShadow='0 2px 10px rgba(37,99,235,.3)';">
+                    <i class="bi bi-journal-text"></i> Export Jurnal Harian
+                    @if($tglMulai || $tglAkhir)
+                        <span class="badge bg-white text-primary ms-1" style="font-size:.65rem;">Filtered</span>
+                    @endif
+                </a>
+
+                <span class="text-muted small ms-1" style="font-size:.75rem;">
+                    <i class="bi bi-info-circle me-1"></i>Format Excel-compatible (CSV UTF-8)
+                </span>
+            </div>
+
             <!-- Tab Content -->
             <div class="tab-content" id="historyTabContent">
                 
