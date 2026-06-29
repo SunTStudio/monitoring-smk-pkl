@@ -1,0 +1,90 @@
+// Custom variables for Bootstrap 5
+
+// Typography
+$font-family-sans-serif: 'Instrument Sans', sans-serif;
+$font-size-base: 0.875rem; // 14px untuk tampilan padat dan nyaman dibaca
+
+// Colors - Slate Gray & Soft Navy theme
+$primary: #1e293b; // Deep Slate
+$secondary: #64748b; // Slate Gray
+$success: #10b981; // Emerald Green
+$info: #0ea5e9; // Sky Blue
+$warning: #f59e0b; // Amber
+$danger: #ef4444; // Rose
+$body-bg: #f8fafc; // Latar belakang abu-abu sangat muda (teduh)
+$body-color: #334155; // Teks abu-abu gelap agar tidak terlalu kontras silau
+
+// Import Bootstrap
+@import "bootstrap/scss/bootstrap";
+
+// Custom global styles
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+// Gaya tabel yang lebih rapat dan profesional
+.table {
+    font-size: 0.825rem;
+    th {
+        font-weight: 600;
+        background-color: #f1f5f9;
+        color: #475569;
+    }
+    td {
+        vertical-align: middle;
+    }
+}
+
+// Desain card dengan bayangan halus (soft shadow)
+.card {
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    border-radius: 0.5rem;
+}
+
+.navbar {
+    border-bottom: 1px solid #e2e8f0;
+}
+
+// Responsive Table Stack untuk tampilan Handphone (HP)
+@media (max-width: 768px) {
+    .table-responsive-stack {
+        thead {
+            display: none;
+        }
+        tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #fff;
+            padding: 0.75rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            
+            td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.5rem 0;
+                border-bottom: 1px solid #f1f5f9;
+                text-align: right;
+                font-size: 0.8rem;
+                
+                &:last-child {
+                    border-bottom: none;
+                }
+                
+                &::before {
+                    content: attr(data-label);
+                    font-weight: 600;
+                    color: #64748b;
+                    text-align: left;
+                    margin-right: 1rem;
+                    font-size: 0.75rem;
+                    text-transform: uppercase;
+                }
+            }
+        }
+    }
+}
