@@ -15,8 +15,9 @@ class PenugasanController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $selectedTahun = $request->input('tahun_ajaran');
 
-        $penugasan = Penugasan::with(['siswa', 'industri', 'pembimbingSekolah', 'pembimbingIndustri'])
+        $penugasanQuery = Penugasan::with(['siswa', 'industri', 'pembimbingSekolah', 'pembimbingIndustri'])
             ->when($search, function ($query, $search) {
                 return $query->whereHas('siswa', function ($q) use ($search) {
                     $q->where('nama_lengkap', 'like', "%{$search}%");
@@ -25,7 +26,15 @@ class PenugasanController extends Controller
                 })->orWhereHas('pembimbingSekolah', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");
                 });
-            })->paginate(15);
+            });
+
+        if ($selectedTahun) {
+            $penugasanQuery->whereHas('siswa.kelasDetail', function ($q) use ($selectedTahun) {
+                $q->where('tahun_ajaran', $selectedTahun);
+            });
+        }
+
+        $penugasan = $penugasanQuery->get();
 
         // Mengambil siswa aktif yang BELUM memiliki penugasan aktif
         $siswa = Siswa::where('status', 'aktif')
@@ -40,8 +49,9 @@ class PenugasanController extends Controller
         $industri = Industri::where('status', 'aktif')->get();
         $pembimbing = User::role('pembimbing')->where('status', 'aktif')->get();
         $pembimbingIndustri = User::role('industri')->where('status', 'aktif')->get();
+        $tahunAjaranList = \App\Models\Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
 
-        return view('admin.penugasan.index', compact('penugasan', 'siswa', 'allSiswa', 'industri', 'pembimbing', 'pembimbingIndustri', 'search'));
+        return view('admin.penugasan.index', compact('penugasan', 'siswa', 'allSiswa', 'industri', 'pembimbing', 'pembimbingIndustri', 'search', 'tahunAjaranList', 'selectedTahun'));
     }
     public function store(Request $request)
     {
@@ -50,7 +60,7 @@ class PenugasanController extends Controller
             'id_siswa_fk.*' => 'exists:siswa,id_siswa',
             'id_industri_fk' => 'required|exists:industri,id_industri',
             'id_pembimbing_fk' => 'required|exists:users,id',
-            'id_pengguna_industri_fk' => 'nullable|exists:users,id',
+            'id_pengguna_industri_fk' => 'required|exists:users,id',
             'tgl_mulai_pkl' => 'required|date',
             'tgl_selesai_pkl' => 'required|date|after_or_equal:tgl_mulai_pkl',
             'lokasi_kerja' => 'nullable|string|max:100',
@@ -99,7 +109,7 @@ class PenugasanController extends Controller
             'id_siswa_fk' => 'required|exists:siswa,id_siswa',
             'id_industri_fk' => 'required|exists:industri,id_industri',
             'id_pembimbing_fk' => 'required|exists:users,id',
-            'id_pengguna_industri_fk' => 'nullable|exists:users,id',
+            'id_pengguna_industri_fk' => 'required|exists:users,id',
             'tgl_mulai_pkl' => 'required|date',
             'tgl_selesai_pkl' => 'required|date|after_or_equal:tgl_mulai_pkl',
             'lokasi_kerja' => 'nullable|string|max:100',

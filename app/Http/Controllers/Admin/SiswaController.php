@@ -15,16 +15,31 @@ class SiswaController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $selectedTahun = $request->input('tahun_ajaran');
 
-        $siswa = Siswa::when($search, function ($query, $search) {
-            return $query->where('nama_lengkap', 'like', "%{$search}%")
-                         ->orWhere('nisn', 'like', "%{$search}%")
-                         ->orWhere('nis', 'like', "%{$search}%")
-                         ->orWhere('kelas', 'like', "%{$search}%")
-                         ->orWhere('jurusan', 'like', "%{$search}%");
-        })->paginate(15);
+        $siswaQuery = Siswa::with('kelasDetail');
+        if ($search) {
+            $siswaQuery->where(function($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nisn', 'like', "%{$search}%")
+                  ->orWhere('nis', 'like', "%{$search}%")
+                  ->orWhere('kelas', 'like', "%{$search}%")
+                  ->orWhere('jurusan', 'like', "%{$search}%");
+            });
+        }
 
-        return view('admin.siswa.index', compact('siswa', 'search'));
+        if ($selectedTahun) {
+            $siswaQuery->whereHas('kelasDetail', function($q) use ($selectedTahun) {
+                $q->where('tahun_ajaran', $selectedTahun);
+            });
+        }
+
+        $siswa = $siswaQuery->get()->groupBy('jurusan');
+
+        $masterKelas = \App\Models\Kelas::all();
+        $tahunAjaranList = \App\Models\Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
+
+        return view('admin.siswa.index', compact('siswa', 'search', 'masterKelas', 'tahunAjaranList', 'selectedTahun'));
     }
 
     public function store(Request $request)
@@ -33,8 +48,7 @@ class SiswaController extends Controller
             'name' => 'required|string|max:100',
             'nisn' => 'required|string|max:20|unique:siswa,nisn',
             'nis' => 'required|string|max:10|unique:siswa,nis',
-            'kelas' => 'required|string|max:5',
-            'jurusan' => 'required|string|max:50',
+            'id_kelas_fk' => 'required|exists:kelas,id_kelas',
             'no_hp' => 'nullable|string|max:15',
             'email' => 'required|string|email|max:100|unique:users,email',
             'password' => ['required', Rules\Password::defaults()],
@@ -42,6 +56,8 @@ class SiswaController extends Controller
             'nama_orang_tua' => 'nullable|string|max:100',
             'no_hp_orang_tua' => 'nullable|string|max:15',
         ]);
+
+        $kelasObj = \App\Models\Kelas::findOrFail($request->id_kelas_fk);
 
         DB::beginTransaction();
 
@@ -62,8 +78,9 @@ class SiswaController extends Controller
                 'nisn' => $request->nisn,
                 'nis' => $request->nis,
                 'nama_lengkap' => $request->name,
-                'kelas' => $request->kelas,
-                'jurusan' => $request->jurusan,
+                'id_kelas_fk' => $kelasObj->id_kelas,
+                'kelas' => $kelasObj->nama_kelas,
+                'jurusan' => $kelasObj->jurusan,
                 'no_hp' => $request->no_hp,
                 'email' => $request->email,
                 'alamat' => $request->alamat,
@@ -90,8 +107,7 @@ class SiswaController extends Controller
             'name' => 'required|string|max:100',
             'nisn' => 'required|string|max:20|unique:siswa,nisn,' . $id . ',id_siswa',
             'nis' => 'required|string|max:10|unique:siswa,nis,' . $id . ',id_siswa',
-            'kelas' => 'required|string|max:5',
-            'jurusan' => 'required|string|max:50',
+            'id_kelas_fk' => 'required|exists:kelas,id_kelas',
             'no_hp' => 'nullable|string|max:15',
             'email' => 'required|string|email|max:100|unique:users,email,' . $siswa->id_pengguna_fk,
             'password' => ['nullable', Rules\Password::defaults()],
@@ -100,6 +116,8 @@ class SiswaController extends Controller
             'no_hp_orang_tua' => 'nullable|string|max:15',
             'status' => 'required|in:aktif,selesai,dropout',
         ]);
+
+        $kelasObj = \App\Models\Kelas::findOrFail($request->id_kelas_fk);
 
         DB::beginTransaction();
 
@@ -124,8 +142,9 @@ class SiswaController extends Controller
                 'nisn' => $request->nisn,
                 'nis' => $request->nis,
                 'nama_lengkap' => $request->name,
-                'kelas' => $request->kelas,
-                'jurusan' => $request->jurusan,
+                'id_kelas_fk' => $kelasObj->id_kelas,
+                'kelas' => $kelasObj->nama_kelas,
+                'jurusan' => $kelasObj->jurusan,
                 'no_hp' => $request->no_hp,
                 'email' => $request->email,
                 'alamat' => $request->alamat,

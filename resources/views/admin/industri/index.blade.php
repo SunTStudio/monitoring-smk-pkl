@@ -33,7 +33,7 @@
 
     <!-- Table -->
     <div class="table-responsive">
-        <table class="table table-hover align-middle table-responsive-stack">
+        <table class="table table-hover align-middle table-responsive-stack datatable">
             <thead class="table-light">
                 <tr>
                     <th>Nama Industri</th>
@@ -74,6 +74,12 @@
                             @endif
                         </td>
                         <td data-label="Aksi" class="text-center">
+                            <!-- Lihat Siswa Button -->
+                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3 me-1" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#viewSiswaModal{{ $item->id_industri }}">
+                                <i class="bi bi-people"></i> Siswa
+                            </button>
                             <!-- Edit Button -->
                             <button class="btn btn-outline-dark btn-sm rounded-pill px-3 me-1" 
                                 data-bs-toggle="modal" 
@@ -99,10 +105,6 @@
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-3">
-        {{ $industri->appends(['search' => $search])->links() }}
-    </div>
 </div>
 
 <!-- Add Industri Modal -->
@@ -260,6 +262,72 @@
                         <button type="submit" class="btn btn-dark btn-sm">Simpan Perubahan</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+@endforeach
+
+<!-- View Siswa Modals -->
+@foreach($industri as $item)
+    <div class="modal fade" id="viewSiswaModal{{ $item->id_industri }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content card-custom p-3 border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-people-fill text-primary me-2"></i>
+                        Daftar Siswa PKL - {{ $item->nama_industri }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    @if($item->penugasan->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nama Siswa</th>
+                                        <th>Kelas / Jurusan</th>
+                                        <th>Periode PKL</th>
+                                        <th>Status PKL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($item->penugasan as $p)
+                                        @if($p->siswa)
+                                            <tr>
+                                                <td class="fw-medium text-dark">{{ $p->siswa->nama_lengkap }}</td>
+                                                <td>{{ $p->siswa->kelas }} - {{ $p->siswa->jurusan }}</td>
+                                                <td>
+                                                    <small class="fw-semibold">
+                                                        {{ \Carbon\Carbon::parse($p->tgl_mulai_pkl)->translatedFormat('d M Y') }} s/d 
+                                                        {{ \Carbon\Carbon::parse($p->tgl_selesai_pkl)->translatedFormat('d M Y') }}
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    @if($p->status === 'aktif')
+                                                        <span class="badge bg-success-subtle text-success text-capitalize">{{ $p->status }}</span>
+                                                    @elseif($p->status === 'selesai')
+                                                        <span class="badge bg-info-subtle text-info text-capitalize">{{ $p->status }}</span>
+                                                    @else
+                                                        <span class="badge bg-danger-subtle text-danger text-capitalize">{{ $p->status }}</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endif
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                            Belum ada siswa PKL yang ditempatkan di mitra industri ini.
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-dark btn-sm" data-bs-dismiss="modal">Tutup</button>
+                </div>
             </div>
         </div>
     </div>

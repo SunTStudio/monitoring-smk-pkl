@@ -96,6 +96,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $industri->update(['id_industri_fk' => $mitra->id_industri]);
+
         // 7. Membuat Contoh Akun Siswa 1 (Ahmad Maulana)
         $userSiswa1 = User::firstOrCreate(
             ['email' => 'siswa@smkadvance.sch.id'],
@@ -172,8 +174,30 @@ class DatabaseSeeder extends Seeder
                 'divisi_departemen' => 'IT Support & Development',
                 'pembimbing_industri' => 'Budi Utomo',
                 'status' => 'aktif',
-                'catatan' => 'Penugasan perdana uji coba sistem.',
             ]
         );
+
+        // 10. Membuat Aspek Kompetensi Jurusan
+        $aspekKompetensi = [
+            ['jurusan' => 'RPL', 'nama_aspek' => 'Pemrograman Web & Mobile', 'deskripsi_aspek' => 'Aspek penilaian pembuatan web dan mobile.'],
+            ['jurusan' => 'RPL', 'nama_aspek' => 'Basis Data & SQL', 'deskripsi_aspek' => 'Aspek penilaian perancangan dan manajemen database.'],
+            ['jurusan' => 'TKJ', 'nama_aspek' => 'Jaringan Komputer & K3', 'deskripsi_aspek' => 'Aspek instalasi jaringan dan kepatuhan K3.'],
+            ['jurusan' => 'TKJ', 'nama_aspek' => 'Administrasi Server', 'deskripsi_aspek' => 'Aspek konfigurasi dan kelola server.'],
+            ['jurusan' => 'Kimia', 'nama_aspek' => 'Analisis Laboratorium & Kimia Dasar', 'deskripsi_aspek' => 'Aspek kepatuhan prosedur lab dan analisis bahan.'],
+            ['jurusan' => 'Kimia', 'nama_aspek' => 'Alat Industri Kimia', 'deskripsi_aspek' => 'Aspek operasional alat industri kimia.'],
+        ];
+
+        foreach ($aspekKompetensi as $aspek) {
+            \App\Models\KompetensiJurusan::firstOrCreate(
+                ['jurusan' => $aspek['jurusan'], 'nama_aspek' => $aspek['nama_aspek']],
+                ['deskripsi_aspek' => $aspek['deskripsi_aspek']]
+            );
+        }
+
+        // 11. Jalankan KelasSeeder untuk memetakan otomatis kelas siswa aktif
+        $this->call(KelasSeeder::class);
+
+        // 12. Jalankan DemoTahunLaluSeeder untuk menambahkan data simulasi angkatan tahun lalu
+        $this->call(DemoTahunLaluSeeder::class);
     }
 }

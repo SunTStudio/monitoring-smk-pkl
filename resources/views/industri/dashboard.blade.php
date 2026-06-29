@@ -31,51 +31,87 @@
     </div>
 </div>
 
+<!-- FILTER SISWA MAGANG -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-3 shadow-sm border-0">
+            <form method="GET" action="{{ route('industri.dashboard') }}" class="row align-items-center">
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <h6 class="fw-bold text-dark mb-0">
+                        <i class="bi bi-funnel-fill text-warning me-2"></i> 
+                        Filter & Penilaian Mandiri Per Siswa
+                    </h6>
+                    <small class="text-muted">Pilih siswa di bawah untuk melihat log presensi, jurnal harian, dan menginput nilai kompetensi teknis secara terpisah.</small>
+                </div>
+                <div class="col-md-6">
+                    <select name="siswa_id" class="form-select bg-light" onchange="this.form.submit()">
+                        <option value="">-- Tampilkan Semua Siswa Magang --</option>
+                        @foreach($penugasan as $item)
+                            <option value="{{ $item->id_siswa_fk }}" {{ $selectedSiswaId == $item->id_siswa_fk ? 'selected' : '' }}>
+                                {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->kelas }} - {{ $item->siswa->jurusan }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <!-- Siswa Magang & Log Presensi -->
-    <div class="col-md-7">
-        <!-- Siswa PKL Magang Card -->
-        <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-warning me-2"></i> Siswa PKL Magang Aktif</h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm" style="font-size: 0.85rem;">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Nama Siswa</th>
-                            <th>Jurusan</th>
-                            <th>Tanggal Mulai</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($penugasan as $item)
+    <div class="col-md-8">
+        @if(!$selectedSiswaId)
+            <!-- Siswa PKL Magang Card (Hanya muncul jika belum memfilter siswa) -->
+            <div class="card card-custom p-4 shadow-sm mb-4">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-warning me-2"></i> Siswa PKL Magang Aktif</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
+                        <thead class="table-light">
                             <tr>
-                                <td class="fw-semibold text-dark">{{ $item->siswa->nama_lengkap ?? '-' }}</td>
-                                <td>{{ $item->siswa->jurusan ?? '-' }}</td>
-                                <td>{{ \Carbon\Carbon::parse($item->tgl_mulai_pkl)->format('d M Y') }}</td>
-                                <td>
-                                    @if($item->status === 'aktif')
-                                        <span class="badge bg-success-subtle text-success text-capitalize">{{ $item->status }}</span>
-                                    @else
-                                        <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ $item->status }}</span>
-                                    @endif
-                                </td>
+                                <th>Nama Siswa</th>
+                                <th>Jurusan</th>
+                                <th>Tanggal Mulai</th>
+                                <th>Status</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center py-3 text-muted">Belum ada data siswa magang aktif.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @forelse($penugasan as $item)
+                                <tr>
+                                    <td data-label="Nama Siswa" class="fw-semibold text-dark">
+                                        <a href="{{ route('industri.dashboard', ['siswa_id' => $item->id_siswa_fk]) }}" class="text-decoration-none text-dark hover-primary">
+                                            {{ $item->siswa->nama_lengkap ?? '-' }} <i class="bi bi-arrow-right-short"></i>
+                                        </a>
+                                    </td>
+                                    <td data-label="Jurusan">{{ $item->siswa->jurusan ?? '-' }}</td>
+                                    <td data-label="Tanggal Mulai">{{ \Carbon\Carbon::parse($item->tgl_mulai_pkl)->format('d M Y') }}</td>
+                                    <td data-label="Status">
+                                        @if($item->status === 'aktif')
+                                            <span class="badge bg-success-subtle text-success text-capitalize">{{ $item->status }}</span>
+                                        @else
+                                            <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ $item->status }}</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center py-3 text-muted">Belum ada data siswa magang aktif.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
+        @endif
 
         <!-- Log Kehadiran Siswa PKL Card -->
         <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Log Kehadiran Siswa PKL</h5>
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-geo-alt-fill text-danger me-2"></i> 
+                Log Kehadiran {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
+            </h5>
             <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm" style="font-size: 0.85rem;">
+                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
                             <th>Tanggal</th>
@@ -101,7 +137,7 @@
                                 // Haversine distance calculation in PHP
                                 $distance = 0;
                                 if ($latStudent && $lonStudent) {
-                                    $earthRadius = 6371000; // Earth radius in meters
+                                    $earthRadius = 6371000;
                                     $latDelta = deg2rad($latOff - $latStudent);
                                     $lonDelta = deg2rad($lngOff - $lonStudent);
                                     $a = sin($latDelta / 2) * sin($latDelta / 2) +
@@ -112,13 +148,13 @@
                                 }
                             @endphp
                             <tr>
-                                <td>{{ \Carbon\Carbon::parse($k->tgl_absen)->format('d M Y') }}</td>
-                                <td class="fw-semibold text-dark">{{ $k->siswa->nama_lengkap ?? '-' }}</td>
-                                <td>
+                                <td data-label="Tanggal">{{ \Carbon\Carbon::parse($k->tgl_absen)->format('d M Y') }}</td>
+                                <td data-label="Siswa" class="fw-semibold text-dark">{{ $k->siswa->nama_lengkap ?? '-' }}</td>
+                                <td data-label="Absen Masuk/Keluar">
                                     <span class="text-success"><i class="bi bi-box-arrow-in-right"></i> {{ $k->waktu_checkin ?? '-' }}</span><br>
                                     <span class="text-danger"><i class="bi bi-box-arrow-out-right"></i> {{ $k->waktu_checkout ?? '-' }}</span>
                                 </td>
-                                <td>
+                                <td data-label="Jarak Geofence">
                                     @if($latStudent && $lonStudent)
                                         <span class="fw-bold">{{ number_format($distance, 1) }} m</span><br>
                                         @if($distance <= 100)
@@ -130,7 +166,7 @@
                                         <span class="text-muted">-</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td data-label="Aksi" class="text-center">
                                     @if($latStudent && $lonStudent)
                                         <button class="btn btn-outline-dark btn-sm rounded-pill px-2 py-0.5" 
                                             data-bs-toggle="modal" 
@@ -158,50 +194,155 @@
                 </table>
             </div>
         </div>
+
+        <!-- Jurnal Laporan Harian Siswa Card -->
+        <div class="card card-custom p-4 shadow-sm mb-4">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-journal-richtext text-primary me-2"></i> 
+                Jurnal Harian {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
+            </h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tanggal</th>
+                            <th>Siswa</th>
+                            <th>Aktivitas & Hasil</th>
+                            <th>Lampiran</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($laporanJurnal as $jurnal)
+                            <tr>
+                                <td data-label="Tanggal">{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}</td>
+                                <td data-label="Siswa" class="fw-semibold text-dark">{{ $jurnal->siswa->nama_lengkap ?? '-' }}</td>
+                                <td data-label="Aktivitas & Hasil">
+                                    <span class="text-dark d-block fw-medium">{{ Str::limit($jurnal->aktivitas_pekerjaan, 50) }}</span>
+                                    <small class="text-muted d-block">Hasil: {{ Str::limit($jurnal->hasil_pekerjaan, 40) }}</small>
+                                    <div class="mt-1">
+                                        <span class="badge bg-success-subtle text-success" style="font-size: 0.72rem;">Nilai DUDI: {{ $jurnal->nilai_dudi ?? 'Belum' }}</span>
+                                        <span class="badge bg-info-subtle text-info" style="font-size: 0.72rem;">Nilai Guru: {{ $jurnal->nilai_guru ?? 'Belum' }}</span>
+                                    </div>
+                                </td>
+                                <td data-label="Lampiran">
+                                    @if($jurnal->file_lampiran)
+                                        <a href="{{ asset($jurnal->file_lampiran) }}" target="_blank" class="btn btn-outline-dark btn-xs px-2 py-0.5 rounded-pill text-decoration-none">
+                                            <i class="bi bi-download"></i> Unduh
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">-</span>
+                                    @endif
+                                </td>
+                                <td data-label="Status">
+                                    @if($jurnal->status === 'approved')
+                                        <span class="badge bg-success-subtle text-success">Disetujui</span>
+                                    @elseif($jurnal->status === 'rejected')
+                                        <span class="badge bg-danger-subtle text-danger">Ditolak</span>
+                                    @else
+                                        <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                    @endif
+                                </td>
+                                <td data-label="Aksi" class="text-center">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0.5"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#reviewModal"
+                                        data-id="{{ $jurnal->id_laporan }}"
+                                        data-student-name="{{ $jurnal->siswa->nama_lengkap }}"
+                                        data-date="{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}"
+                                        data-activity="{{ $jurnal->aktivitas_pekerjaan }}"
+                                        data-output="{{ $jurnal->hasil_pekerjaan ?? '-' }}"
+                                        data-skills="{{ $jurnal->skill_dipraktikkan ?? '-' }}"
+                                        data-feedback="{{ $jurnal->feedback_pembimbing }}"
+                                        data-status="{{ $jurnal->status ?? 'approved' }}"
+                                        data-nilai="{{ $jurnal->nilai_dudi }}">
+                                        <i class="bi bi-pencil-square"></i> Review
+                                    </button>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-3 text-muted">Belum ada laporan jurnal harian dari siswa.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
-    <!-- Form Input Nilai Kompetensi Mock -->
-    <div class="col-md-5">
+    <!-- FORM INPUT PENILAIAN KOMPETENSI TEKNIS -->
+    <div class="col-md-4">
         <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-award-fill text-warning me-2"></i> Beri Penilaian Kompetensi</h5>
-            <form action="{{ route('nilai.kompetensi') }}" method="POST">
-                @csrf
-                <input type="hidden" name="id_penugasan_fk" value="1">
-                <input type="hidden" name="id_siswa_fk" value="1">
-                <input type="hidden" name="status" value="finalized">
-                
-                <div class="mb-3">
-                    <label class="form-label fw-semibold text-secondary small">Muhammad Rayhan (Siswa RPL)</label>
-                    <div class="border rounded p-3 bg-light">
-                        <!-- Score 1 -->
-                        <div class="mb-3">
-                            <label class="form-label text-dark small fw-medium">Pemrograman Web & Mobile (1-100)</label>
-                            <input type="number" class="form-control form-control-sm bg-white" name="scores[1][nilai]" value="85" min="0" max="100" required>
-                            <input type="text" class="form-control form-control-sm bg-white mt-1" name="scores[1][catatan]" placeholder="Catatan aspek...">
-                        </div>
-                        <!-- Score 2 -->
-                        <div class="mb-3">
-                            <label class="form-label text-dark small fw-medium">Basis Data & SQL (1-100)</label>
-                            <input type="number" class="form-control form-control-sm bg-white" name="scores[2][nilai]" value="90" min="0" max="100" required>
-                            <input type="text" class="form-control form-control-sm bg-white mt-1" name="scores[2][catatan]" placeholder="Catatan aspek...">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-award-fill text-warning me-2"></i> 
+                Penilaian Kompetensi Teknis
+            </h5>
+
+            @if($selectedSiswa && $selectedPenugasan)
+                <form action="{{ route('nilai.kompetensi') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="id_penugasan_fk" value="{{ $selectedPenugasan->id_penugasan }}">
+                    <input type="hidden" name="id_siswa_fk" value="{{ $selectedSiswa->id_siswa }}">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-dark small">
+                            Siswa: {{ $selectedSiswa->nama_lengkap }} ({{ $selectedSiswa->jurusan }})
+                        </label>
+                        
+                        <div class="border rounded p-3 bg-light">
+                            @forelse($kompetensiAspek as $aspek)
+                                @php
+                                    $existingDetail = $penilaianExisting ? $penilaianExisting->details->where('id_kompetensi_fk', $aspek->id_kompetensi)->first() : null;
+                                    $existingNilai = $existingDetail ? $existingDetail->nilai : 80;
+                                    $existingCatatan = $existingDetail ? $existingDetail->catatan : '';
+                                @endphp
+                                <div class="mb-3">
+                                    <label class="form-label text-dark small fw-semibold mb-1">
+                                        {{ $aspek->nama_aspek }} (1-100)
+                                    </label>
+                                    <input type="number" class="form-control form-control-sm bg-white" name="scores[{{ $aspek->id_kompetensi }}][nilai]" value="{{ $existingNilai }}" min="0" max="100" required>
+                                    <input type="text" class="form-control form-control-sm bg-white mt-1" name="scores[{{ $aspek->id_kompetensi }}][catatan]" value="{{ $existingCatatan }}" placeholder="Tulis catatan evaluasi aspek...">
+                                </div>
+                            @empty
+                                <div class="text-muted small text-center py-2">
+                                    <i class="bi bi-info-circle"></i> Tidak ada aspek kompetensi spesifik untuk jurusan <strong>{{ $selectedSiswa->jurusan }}</strong>. Silakan hubungi koordinator sekolah.
+                                </div>
+                            @endforelse
                         </div>
                     </div>
-                </div>
 
-                <div class="mb-3">
-                    <label for="catatan_umum" class="form-label fw-medium text-secondary">Catatan Perkembangan Umum</label>
-                    <textarea class="form-control bg-light" name="catatan_umum" rows="2" placeholder="Siswa rajin dan terampil..."></textarea>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-secondary small">Catatan Perkembangan Umum</label>
+                        <textarea class="form-control bg-light" name="catatan_umum" rows="2" placeholder="Tuliskan catatan perkembangan umum siswa selama PKL..." required>{{ $penilaianExisting->catatan_umum ?? '' }}</textarea>
+                    </div>
 
-                <div class="mb-3">
-                    <label for="rekomendasi_industri" class="form-label fw-medium text-secondary">Rekomendasi Industri</label>
-                    <textarea class="form-control bg-light" name="rekomendasi_industri" rows="2" placeholder="Pertahankan kinerja baik..."></textarea>
-                </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium text-secondary small">Rekomendasi Industri</label>
+                        <textarea class="form-control bg-light" name="rekomendasi_industri" rows="2" placeholder="Tuliskan rekomendasi karir/saran bagi siswa..." required>{{ $penilaianExisting->rekomendasi_industri ?? '' }}</textarea>
+                    </div>
 
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-dark btn-sm fw-semibold">Submit Penilaian Akhir</button>
+                    <!-- Status Selection Buttons -->
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <button type="submit" name="status" value="draft" class="btn btn-outline-dark btn-sm w-100 fw-semibold">
+                                <i class="bi bi-save"></i> Simpan Draft
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="submit" name="status" value="finalized" class="btn btn-warning btn-sm w-100 fw-bold text-dark" onclick="return confirm('Apakah Anda yakin ingin melakukan finalisasi nilai? Nilai yang sudah difinalisasi tidak dapat diubah kembali.')">
+                                <i class="bi bi-check-circle-fill"></i> Finalisasi Nilai
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            @else
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-person-fill-lock fs-1 text-warning mb-3 d-block"></i>
+                    <p class="small mb-0">Silakan pilih salah satu **Siswa PKL** di bagian filter di atas untuk melihat aspek dan menginput nilai kompetensi teknisnya.</p>
                 </div>
-            </form>
+            @endif
         </div>
     </div>
 </div>
@@ -220,6 +361,58 @@
                 <!-- Info Text -->
                 <div id="modal-map-info" class="alert alert-light border mt-3 small text-dark mb-0"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Review Jurnal Harian -->
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content card-custom p-3 border-0">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold"><i class="bi bi-journal-check text-primary me-1"></i> Review Jurnal Harian</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="reviewForm" method="POST">
+                @csrf
+                <div class="modal-body py-3">
+                    <div class="border rounded p-3 bg-light mb-3 small text-dark">
+                        <strong>Nama Siswa:</strong> <span id="rev-student-name"></span><br>
+                        <strong>Tanggal Jurnal:</strong> <span id="rev-date"></span><br>
+                        <hr class="my-2">
+                        <strong>Aktivitas Pekerjaan:</strong> 
+                        <p class="mb-2 text-secondary" id="rev-activity" style="white-space: pre-wrap;"></p>
+                        <strong>Output / Bukti:</strong> 
+                        <p class="mb-2 text-secondary" id="rev-output"></p>
+                        <strong>Skill Dipraktikkan:</strong> 
+                        <div>
+                            <span id="rev-skills" class="badge bg-secondary text-white"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Nilai Jurnal Ini (1 - 100) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control bg-light" name="nilai" id="rev-nilai" min="1" max="100" placeholder="Masukkan nilai 1-100..." required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Keputusan Verifikasi</label>
+                        <select class="form-select bg-light" name="status" id="rev-status" required>
+                            <option value="approved">Setujui Jurnal (Approved)</option>
+                            <option value="rejected">Tolak & Minta Revisi (Rejected)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-secondary">Feedback / Catatan Evaluasi</label>
+                        <textarea class="form-control bg-light" name="feedback_pembimbing" id="rev-feedback" rows="3" placeholder="Masukkan komentar pembimbing jika ada..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-dark btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-dark btn-sm">Simpan Review Jurnal</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -287,10 +480,38 @@
                 : '<span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill"></i> DI LUAR RADIUS GEOFENCE (Tidak Valid)</span>';
 
             document.getElementById('modal-map-info').innerHTML = 
-                '<strong>Siswa Magang:</strong> ' + studentName + '<br>' +
+                '<strong>Siswa:</strong> ' + studentName + '<br>' +
                 '<strong>Koordinat Check-in:</strong> Lat ' + sLat + ', Lon ' + sLon + '<br>' +
                 '<strong>Jarak ke Kantor:</strong> ' + distance.toFixed(1) + ' meter.<br>' +
                 '<strong>Status Validasi:</strong> ' + validity;
+        });
+
+        // Review Jurnal Modal population
+        var reviewModalEl = document.getElementById('reviewModal');
+        reviewModalEl.addEventListener('show.bs.modal', function (event) {
+            var button = event.relatedTarget;
+            var id = button.getAttribute('data-id');
+            var studentName = button.getAttribute('data-student-name');
+            var date = button.getAttribute('data-date');
+            var activity = button.getAttribute('data-activity');
+            var output = button.getAttribute('data-output');
+            var skills = button.getAttribute('data-skills');
+            var feedback = button.getAttribute('data-feedback') || '';
+            var status = button.getAttribute('data-status') || 'approved';
+            var nilai = button.getAttribute('data-nilai') || '';
+
+            document.getElementById('rev-student-name').innerText = studentName;
+            document.getElementById('rev-date').innerText = date;
+            document.getElementById('rev-activity').innerText = activity;
+            document.getElementById('rev-output').innerText = output;
+            document.getElementById('rev-skills').innerText = skills;
+            document.getElementById('rev-feedback').value = feedback;
+            document.getElementById('rev-status').value = status;
+            document.getElementById('rev-nilai').value = nilai;
+
+            // Set dynamic action URL
+            var form = document.getElementById('reviewForm');
+            form.setAttribute('action', '/laporan/review/' + id);
         });
     });
 </script>

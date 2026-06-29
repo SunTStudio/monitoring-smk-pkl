@@ -73,18 +73,27 @@
 <div class="row">
     <!-- Menu Management Cards -->
     <div class="col-md-8">
+        <!-- Master Data Block -->
         <div class="card card-custom p-4 shadow-sm mb-4">
             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-gear-fill text-secondary me-2"></i> Pilihan Manajemen Data Master</h5>
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
                         <i class="bi bi-people text-primary fs-2 mb-2"></i>
                         <h6 class="fw-bold mb-1">Data Siswa</h6>
-                        <p class="text-muted small mb-2">Kelola siswa, kelas, & jurusan</p>
+                        <p class="text-muted small mb-2">Kelola data siswa & profil</p>
                         <a href="{{ route('siswa.index') }}" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-auto">Kelola Siswa</a>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
+                        <i class="bi bi-folder-fill text-info fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">Data Kelas</h6>
+                        <p class="text-muted small mb-2">Kelola master kelas & jurusan</p>
+                        <a href="{{ route('kelas.index') }}" class="btn btn-outline-info btn-sm rounded-pill w-100 mt-auto">Kelola Kelas</a>
+                    </div>
+                </div>
+                <div class="col-md-3">
                     <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
                         <i class="bi bi-building text-success fs-2 mb-2"></i>
                         <h6 class="fw-bold mb-1">Mitra Industri</h6>
@@ -92,12 +101,51 @@
                         <a href="{{ route('industri.index') }}" class="btn btn-outline-success btn-sm rounded-pill w-100 mt-auto">Kelola Industri</a>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
                         <i class="bi bi-journal-check text-warning fs-2 mb-2"></i>
                         <h6 class="fw-bold mb-1">Alokasi Penugasan</h6>
                         <p class="text-muted small mb-2">Plotting siswa, guru & DU-DI</p>
                         <a href="{{ route('penugasan.index') }}" class="btn btn-outline-warning btn-sm rounded-pill w-100 text-dark mt-auto">Kelola Alokasi</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Access Block -->
+        <div class="card card-custom p-4 shadow-sm mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-danger me-2"></i> Manajemen Akun & Hak Akses</h5>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
+                        <i class="bi bi-person-video3 text-primary fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">Akun Guru</h6>
+                        <p class="text-muted small mb-2">Login pembimbing sekolah</p>
+                        <a href="{{ route('users.index', ['tab' => 'pembimbing']) }}" class="btn btn-outline-primary btn-sm rounded-pill w-100 mt-auto">Kelola Guru</a>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
+                        <i class="bi bi-building-gear text-success fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">Akun Industri</h6>
+                        <p class="text-muted small mb-2">Login instruktur DU-DI</p>
+                        <a href="{{ route('users.index', ['tab' => 'industri']) }}" class="btn btn-outline-success btn-sm rounded-pill w-100 mt-auto">Kelola Industri</a>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
+                        <i class="bi bi-shield-check text-danger fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">Akun Staf/Admin</h6>
+                        <p class="text-muted small mb-2">Login admin & koordinator</p>
+                        <a href="{{ route('users.index', ['tab' => 'staf']) }}" class="btn btn-outline-danger btn-sm rounded-pill w-100 mt-auto">Kelola Staf</a>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card border border-light p-3 text-center rounded-3 bg-light-subtle h-100 hover-shadow">
+                        <i class="bi bi-people text-warning fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-1">Akun Siswa</h6>
+                        <p class="text-muted small mb-2">Login akun siswa PKL</p>
+                        <a href="{{ route('users.index', ['tab' => 'siswa']) }}" class="btn btn-outline-warning btn-sm rounded-pill w-100 text-dark mt-auto">Kelola Siswa</a>
                     </div>
                 </div>
             </div>

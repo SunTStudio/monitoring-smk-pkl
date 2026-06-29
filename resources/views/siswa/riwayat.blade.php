@@ -53,6 +53,47 @@
                 </li>
             </ul>
 
+            <!-- Filter Tanggal -->
+            <form method="GET" action="{{ route('siswa.riwayat') }}" id="filterTanggalForm">
+                <div class="d-flex flex-wrap gap-2 align-items-end mb-4 p-3 bg-light rounded-3 border">
+                    <div class="me-1">
+                        <label class="form-label small fw-semibold text-secondary mb-1"><i class="bi bi-calendar-range me-1 text-primary"></i>Filter Rentang Tanggal</label>
+                        <div class="d-flex gap-2 align-items-center flex-wrap">
+                            <div>
+                                <label class="form-label small text-muted mb-1" for="tgl_mulai">Dari Tanggal</label>
+                                <input type="date" class="form-control form-control-sm" id="tgl_mulai" name="tgl_mulai" value="{{ $tglMulai ?? '' }}" style="min-width: 150px;">
+                            </div>
+                            <div class="mt-3 text-muted fw-bold">—</div>
+                            <div>
+                                <label class="form-label small text-muted mb-1" for="tgl_akhir">Sampai Tanggal</label>
+                                <input type="date" class="form-control form-control-sm" id="tgl_akhir" name="tgl_akhir" value="{{ $tglAkhir ?? '' }}" style="min-width: 150px;">
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <button type="submit" class="btn btn-primary btn-sm px-3 fw-semibold">
+                                    <i class="bi bi-funnel-fill me-1"></i> Terapkan
+                                </button>
+                                @if($tglMulai || $tglAkhir)
+                                    <a href="{{ route('siswa.riwayat') }}" class="btn btn-outline-secondary btn-sm px-3 fw-semibold">
+                                        <i class="bi bi-x-circle me-1"></i> Reset
+                                    </a>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                    @if($tglMulai || $tglAkhir)
+                        <div class="ms-auto align-self-end">
+                            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+                                <i class="bi bi-filter-circle me-1"></i>
+                                Menampilkan:
+                                {{ $tglMulai ? \Carbon\Carbon::parse($tglMulai)->format('d M Y') : 'Semua' }}
+                                —
+                                {{ $tglAkhir ? \Carbon\Carbon::parse($tglAkhir)->format('d M Y') : 'Sekarang' }}
+                            </span>
+                        </div>
+                    @endif
+                </div>
+            </form>
+
             <!-- Tab Content -->
             <div class="tab-content" id="historyTabContent">
                 
@@ -145,7 +186,9 @@
                                     <th>Output</th>
                                     <th>Skill</th>
                                     <th>Lampiran</th>
-                                    <th>Status & Review</th>
+                                    <th>Status</th>
+                                    <th>Nilai</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -155,10 +198,10 @@
                                         <td data-label="Jam Kerja" class="small">
                                             {{ \Carbon\Carbon::parse($l->jam_mulai_kerja)->format('H:i') }} - {{ \Carbon\Carbon::parse($l->jam_selesai_kerja)->format('H:i') }}
                                         </td>
-                                        <td data-label="Aktivitas / Pekerjaan" style="max-width: 250px;" class="text-truncate" title="{{ $l->aktivitas_pekerjaan }}">
+                                        <td data-label="Aktivitas / Pekerjaan" style="max-width: 200px;" class="text-truncate" title="{{ $l->aktivitas_pekerjaan }}">
                                             {{ $l->aktivitas_pekerjaan }}
                                         </td>
-                                        <td data-label="Output">
+                                        <td data-label="Output" style="max-width: 150px;" class="text-truncate" title="{{ $l->hasil_pekerjaan }}">
                                             <small class="text-secondary">{{ $l->hasil_pekerjaan ?? '-' }}</small>
                                         </td>
                                         <td data-label="Skill">
@@ -173,15 +216,29 @@
                                                 <span class="text-muted small">-</span>
                                             @endif
                                         </td>
-                                        <td data-label="Status & Review">
-                                            @if($l->status === 'reviewed')
-                                                <span class="badge bg-success-subtle text-success text-capitalize mb-1">{{ $l->status }}</span>
-                                                @if($l->feedback_pembimbing)
-                                                    <br><small class="text-muted" style="font-size: 0.75rem;">"{{ $l->feedback_pembimbing }}"</small>
-                                                @endif
+                                        <td data-label="Status">
+                                            @if($l->status === 'approved')
+                                                <span class="badge bg-success-subtle text-success text-capitalize">Disetujui</span>
+                                            @elseif($l->status === 'rejected')
+                                                <span class="badge bg-danger-subtle text-danger text-capitalize">Ditolak</span>
+                                            @elseif($l->status === 'submitted')
+                                                <span class="badge bg-info-subtle text-info text-capitalize">Diajukan</span>
                                             @else
-                                                <span class="badge bg-warning-subtle text-warning text-capitalize">{{ $l->status ?? 'pending' }}</span>
+                                                <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ $l->status ?? 'Draft' }}</span>
                                             @endif
+                                        </td>
+                                        <td data-label="Nilai">
+                                            @if($l->nilai_guru || $l->nilai_dudi)
+                                                <small class="text-muted">Guru: <strong class="text-primary">{{ $l->nilai_guru ?? '-' }}</strong></small><br>
+                                                <small class="text-muted">DU-DI: <strong class="text-success">{{ $l->nilai_dudi ?? '-' }}</strong></small>
+                                            @else
+                                                <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
+                                        <td data-label="Aksi" class="text-center">
+                                            <button class="btn btn-outline-dark btn-xs rounded-pill px-2.5" data-bs-toggle="modal" data-bs-target="#detailJurnalModal{{ $l->id_laporan }}">
+                                                <i class="bi bi-eye"></i> Review
+                                            </button>
                                         </td>
                                     </tr>
                                 @empty
@@ -198,6 +255,104 @@
         </div>
     </div>
 </div>
+
+<!-- Detail Jurnal Modals -->
+@foreach($laporan as $l)
+    <div class="modal fade" id="detailJurnalModal{{ $l->id_laporan }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content card-custom p-3 border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-dark">
+                        <i class="bi bi-journal-richtext text-primary me-2"></i> Review Detail Jurnal
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-3">
+                    <table class="table table-borderless table-sm small mb-3">
+                        <tr>
+                            <td class="fw-semibold text-secondary" style="width: 140px;">Tanggal Jurnal</td>
+                            <td style="width: 10px;">:</td>
+                            <td class="text-dark fw-bold">{{ \Carbon\Carbon::parse($l->tgl_laporan)->translatedFormat('d F Y') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold text-secondary">Jam Kerja</td>
+                            <td>:</td>
+                            <td class="text-dark">{{ \Carbon\Carbon::parse($l->jam_mulai_kerja)->format('H:i') }} - {{ \Carbon\Carbon::parse($l->jam_selesai_kerja)->format('H:i') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold text-secondary">Skill Dipraktikkan</td>
+                            <td>:</td>
+                            <td><span class="badge bg-light text-dark border small">{{ $l->skill_dipraktikkan ?? '-' }}</span></td>
+                        </tr>
+                    </table>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary mb-1">Aktivitas & Pekerjaan Yang Dilakukan</label>
+                        <div class="p-2 bg-light rounded text-dark small" style="white-space: pre-wrap; font-size: 0.82rem;">{{ $l->aktivitas_pekerjaan }}</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-secondary mb-1">Hasil Pekerjaan (Output)</label>
+                        <div class="p-2 bg-light rounded text-dark small" style="font-size: 0.82rem;">{{ $l->hasil_pekerjaan ?? '-' }}</div>
+                    </div>
+
+                    @if($l->kendala_hambatan)
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Kendala / Hambatan</label>
+                            <div class="p-2 bg-light-subtle border rounded text-danger small" style="font-size: 0.82rem;">{{ $l->kendala_hambatan }}</div>
+                        </div>
+                    @endif
+
+                    @if($l->pembelajaran_didapat)
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-secondary mb-1">Pembelajaran Yang Didapat</label>
+                            <div class="p-2 bg-light rounded text-dark small" style="font-size: 0.82rem;">{{ $l->pembelajaran_didapat }}</div>
+                        </div>
+                    @endif
+
+                    <div class="row text-center mb-3 g-2">
+                        <div class="col-6">
+                            <div class="p-2 bg-light border rounded">
+                                <span class="text-secondary small d-block" style="font-size: 0.75rem;">Nilai Sikap (Guru)</span>
+                                <h4 class="fw-bold text-primary mb-0">{{ $l->nilai_guru ?? '-' }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-light border rounded">
+                                <span class="text-secondary small d-block" style="font-size: 0.75rem;">Nilai Teknis (DU-DI)</span>
+                                <h4 class="fw-bold text-success mb-0">{{ $l->nilai_dudi ?? '-' }}</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 border rounded bg-light-subtle">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small fw-bold text-secondary">Status Peninjauan:</span>
+                            @if($l->status === 'approved')
+                                <span class="badge bg-success text-capitalize px-3 py-1.5 rounded-pill">Disetujui</span>
+                            @elseif($l->status === 'rejected')
+                                <span class="badge bg-danger text-capitalize px-3 py-1.5 rounded-pill">Ditolak</span>
+                            @elseif($l->status === 'submitted')
+                                <span class="badge bg-info text-capitalize px-3 py-1.5 rounded-pill">Diajukan</span>
+                            @else
+                                <span class="badge bg-secondary text-capitalize px-3 py-1.5 rounded-pill">{{ $l->status ?? 'Draft' }}</span>
+                            @endif
+                        </div>
+                        @if($l->feedback_pembimbing)
+                            <div class="mt-3 border-top pt-2">
+                                <span class="small fw-semibold text-secondary d-block">Feedback Reviewer:</span>
+                                <p class="mb-0 text-dark small mt-1 italic">"{{ $l->feedback_pembimbing }}"</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-dark btn-sm rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endforeach
 
 <!-- Modal Image Viewer -->
 <div class="modal fade" id="imageViewerModal" tabindex="-1" aria-hidden="true">

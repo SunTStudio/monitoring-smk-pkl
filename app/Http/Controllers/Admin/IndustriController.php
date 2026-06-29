@@ -12,12 +12,12 @@ class IndustriController extends Controller
     {
         $search = $request->input('search');
 
-        $industri = Industri::when($search, function ($query, $search) {
+        $industri = Industri::with('penugasan.siswa')->when($search, function ($query, $search) {
             return $query->where('nama_industri', 'like', "%{$search}%")
                          ->orWhere('jenis_industri', 'like', "%{$search}%")
                          ->orWhere('kota', 'like', "%{$search}%")
                          ->orWhere('nama_kontak_person', 'like', "%{$search}%");
-        })->paginate(15);
+        })->get();
 
         return view('admin.industri.index', compact('industri', 'search'));
     }

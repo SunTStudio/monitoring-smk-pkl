@@ -78,16 +78,27 @@ class LaporanHarianController extends Controller
         $request->validate([
             'status' => 'required|in:approved,rejected',
             'feedback_pembimbing' => 'nullable|string',
+            'nilai' => 'nullable|integer|between:1,100',
         ]);
 
         $laporan = LaporanHarian::findOrFail($id);
 
-        $laporan->update([
+        $data = [
             'status' => $request->status,
             'feedback_pembimbing' => $request->feedback_pembimbing,
             'id_pembimbing_review' => Auth::id(),
             'tgl_review' => Carbon::now(),
-        ]);
+        ];
+
+        if ($request->has('nilai')) {
+            if (Auth::user()->hasRole('industri')) {
+                $data['nilai_dudi'] = $request->nilai;
+            } else {
+                $data['nilai_guru'] = $request->nilai;
+            }
+        }
+
+        $laporan->update($data);
 
         return redirect()->back()->with('success', 'Review laporan harian berhasil disimpan.');
     }

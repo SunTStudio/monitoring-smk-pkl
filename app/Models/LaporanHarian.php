@@ -17,7 +17,8 @@ class LaporanHarian extends Model
         'jam_selesai_kerja', 'jam_kerja_total', 'aktivitas_pekerjaan',
         'hasil_pekerjaan', 'skill_dipraktikkan', 'kendala_hambatan',
         'pembelajaran_didapat', 'file_lampiran', 'status',
-        'feedback_pembimbing', 'id_pembimbing_review', 'tgl_review'
+        'feedback_pembimbing', 'id_pembimbing_review', 'tgl_review',
+        'nilai_dudi', 'nilai_guru'
     ];
 
     public function penugasan()

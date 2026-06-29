@@ -6,22 +6,44 @@
 <div class="card card-custom p-4 shadow-sm mb-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h5 class="fw-bold text-dark mb-0"><i class="bi bi-journal-check text-primary me-2"></i> Alokasi & Penugasan PKL Siswa</h5>
-        <button class="btn btn-dark btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addPenugasanModal">
-            <i class="bi bi-plus-circle me-1"></i> Buat Alokasi
-        </button>
+        <div>
+            <a href="{{ route('nilai.export') }}" class="btn btn-outline-success btn-sm rounded-pill px-3 me-2">
+                <i class="bi bi-file-earmark-spreadsheet me-1"></i> Export Excel Nilai PKL
+            </a>
+            <button class="btn btn-dark btn-sm rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#addPenugasanModal">
+                <i class="bi bi-plus-circle me-1"></i> Buat Alokasi
+            </button>
+        </div>
     </div>
 
-    <!-- Search Form -->
+    <!-- Search and Filter Form -->
     <form method="GET" action="{{ route('penugasan.index') }}" class="mb-4">
-        <div class="input-group">
-            <input type="text" name="search" class="form-control bg-light border-end-0" placeholder="Cari nama siswa, industri, atau guru pembimbing..." value="{{ $search }}">
-            <button type="submit" class="btn btn-dark"><i class="bi bi-search"></i> Cari</button>
+        <div class="row g-2">
+            <div class="col-md-7">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control bg-light border-end-0" placeholder="Cari nama siswa, industri, atau guru pembimbing..." value="{{ $search }}">
+                    <button type="submit" class="btn btn-dark"><i class="bi bi-search"></i> Cari</button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <select name="tahun_ajaran" class="form-select bg-light" onchange="this.form.submit()">
+                    <option value="">-- Semua Tahun Ajaran --</option>
+                    @foreach($tahunAjaranList as $t)
+                        <option value="{{ $t }}" {{ $selectedTahun == $t ? 'selected' : '' }}>Tahun Ajaran {{ $t }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                @if($search || $selectedTahun)
+                    <a href="{{ route('penugasan.index') }}" class="btn btn-outline-danger w-100 fw-semibold">Reset</a>
+                @endif
+            </div>
         </div>
     </form>
 
     <!-- Table -->
     <div class="table-responsive">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle datatable">
             <thead class="table-light">
                 <tr>
                     <th>Siswa</th>
@@ -90,10 +112,6 @@
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="mt-3">
-        {{ $penugasan->appends(['search' => $search])->links() }}
-    </div>
 </div>
 
 <!-- Add Penugasan Modal -->
@@ -124,7 +142,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label small fw-semibold text-secondary">Industri Tempat PKL</label>
-                            <select class="form-select bg-light" name="id_industri_fk" required>
+                            <select class="form-select bg-light" name="id_industri_fk" id="industriSelectAdd" required>
                                 <option value="">Pilih Industri</option>
                                 @foreach($industri as $i)
                                     <option value="{{ $i->id_industri }}">{{ $i->nama_industri }} ({{ $i->kota }})</option>
@@ -141,11 +159,11 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label small fw-semibold text-secondary">Akun Pembimbing Industri</label>
-                            <select class="form-select bg-light" name="id_pengguna_industri_fk">
+                            <label class="form-label small fw-semibold text-secondary">Akun Pembimbing Industri <span class="text-danger">*</span></label>
+                            <select class="form-select bg-light" name="id_pengguna_industri_fk" id="pembimbingIndustriSelectAdd" required>
                                 <option value="">Pilih Akun Industri</option>
                                 @foreach($pembimbingIndustri as $pi)
-                                    <option value="{{ $pi->id }}">{{ $pi->name }}</option>
+                                    <option value="{{ $pi->id }}" data-industri="{{ $pi->id_industri_fk ?? '' }}">{{ $pi->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -216,7 +234,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label small fw-semibold text-secondary">Industri Tempat PKL</label>
-                                <select class="form-select bg-light" name="id_industri_fk" required>
+                                <select class="form-select bg-light" name="id_industri_fk" id="industriSelectEdit{{ $item->id_penugasan }}" required>
                                     @foreach($industri as $i)
                                         <option value="{{ $i->id_industri }}" {{ $item->id_industri_fk == $i->id_industri ? 'selected' : '' }}>{{ $i->nama_industri }} ({{ $i->kota }})</option>
                                     @endforeach
@@ -231,11 +249,11 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-semibold text-secondary">Akun Pembimbing Industri</label>
-                                <select class="form-select bg-light" name="id_pengguna_industri_fk">
+                                <label class="form-label small fw-semibold text-secondary">Akun Pembimbing Industri <span class="text-danger">*</span></label>
+                                <select class="form-select bg-light" name="id_pengguna_industri_fk" id="pembimbingIndustriSelectEdit{{ $item->id_penugasan }}" required>
                                     <option value="">Pilih Akun Industri</option>
                                     @foreach($pembimbingIndustri as $pi)
-                                        <option value="{{ $pi->id }}" {{ $item->id_pengguna_industri_fk == $pi->id ? 'selected' : '' }}>{{ $pi->name }}</option>
+                                        <option value="{{ $pi->id }}" data-industri="{{ $pi->id_industri_fk ?? '' }}" {{ $item->id_pengguna_industri_fk == $pi->id ? 'selected' : '' }}>{{ $pi->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -284,4 +302,89 @@
     </div>
 @endforeach
 
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Filter for Add Modal ---
+        (function() {
+            var indSelect = document.getElementById('industriSelectAdd');
+            var pemSelect = document.getElementById('pembimbingIndustriSelectAdd');
+            if (indSelect && pemSelect) {
+                var originalOptions = Array.from(pemSelect.options);
+                function filter() {
+                    var selected = indSelect.value;
+                    var currentValue = pemSelect.value;
+                    pemSelect.innerHTML = '';
+                    
+                    var filtered = originalOptions.filter(function(opt) {
+                        if (opt.value === '') return true; // Keep placeholder
+                        var optInd = opt.getAttribute('data-industri');
+                        return !selected || optInd === selected;
+                    });
+                    
+                    filtered.forEach(function(opt) {
+                        pemSelect.appendChild(opt);
+                    });
+
+                    var hasCurrentValue = filtered.some(function(opt) { return opt.value === currentValue; });
+                    if (hasCurrentValue) {
+                        pemSelect.value = currentValue;
+                    } else {
+                        var validOpts = filtered.filter(function(opt) { return opt.value !== ''; });
+                        if (validOpts.length === 1) {
+                            pemSelect.value = validOpts[0].value;
+                        } else {
+                            pemSelect.value = '';
+                        }
+                    }
+                }
+                indSelect.addEventListener('change', filter);
+                filter(); // Run once initially
+            }
+        })();
+
+        // --- Filter for Edit Modals ---
+        @foreach($penugasan as $item)
+            (function() {
+                var indSelect = document.getElementById('industriSelectEdit{{ $item->id_penugasan }}');
+                var pemSelect = document.getElementById('pembimbingIndustriSelectEdit{{ $item->id_penugasan }}');
+                if (indSelect && pemSelect) {
+                    var originalOptions = Array.from(pemSelect.options);
+                    var initialValue = "{{ $item->id_pengguna_industri_fk }}";
+                    
+                    function filter() {
+                        var selected = indSelect.value;
+                        var currentValue = pemSelect.value || initialValue;
+                        pemSelect.innerHTML = '';
+                        
+                        var filtered = originalOptions.filter(function(opt) {
+                            if (opt.value === '') return true;
+                            var optInd = opt.getAttribute('data-industri');
+                            return !selected || optInd === selected;
+                        });
+                        
+                        filtered.forEach(function(opt) {
+                            pemSelect.appendChild(opt);
+                        });
+
+                        var hasCurrentValue = filtered.some(function(opt) { return opt.value === currentValue; });
+                        if (hasCurrentValue) {
+                            pemSelect.value = currentValue;
+                        } else {
+                            var validOpts = filtered.filter(function(opt) { return opt.value !== ''; });
+                            if (validOpts.length === 1) {
+                                pemSelect.value = validOpts[0].value;
+                            } else {
+                                pemSelect.value = '';
+                            }
+                        }
+                    }
+                    indSelect.addEventListener('change', filter);
+                    filter(); // Run once initially
+                }
+            })();
+        @endforeach
+    });
+</script>
+@endsection
 @endsection

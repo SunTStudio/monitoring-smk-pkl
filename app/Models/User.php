@@ -12,12 +12,17 @@ use Illuminate\Notifications\Notifiable;
 
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'username', 'email', 'password', 'status', 'catatan'])]
+#[Fillable(['name', 'username', 'email', 'password', 'status', 'catatan', 'id_industri_fk'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
+
+    public function industriDetail()
+    {
+        return $this->belongsTo(Industri::class, 'id_industri_fk', 'id_industri');
+    }
 
     /**
      * Get the attributes that should be cast.

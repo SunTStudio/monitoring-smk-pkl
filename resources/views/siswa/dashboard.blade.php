@@ -37,18 +37,100 @@
     </div>
 </div>
 
+@if($nilaiAkhir)
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card card-custom p-4 shadow-sm border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <div class="mb-3 mb-md-0">
+                    <h5 class="fw-bold text-dark mb-1"><i class="bi bi-award-fill text-warning me-2"></i> Rapor Nilai Akhir PKL Anda Telah Terbit!</h5>
+                    <p class="text-muted small mb-0">Nilai akhir Anda telah difinalisasi oleh pembimbing sekolah pada tanggal {{ \Carbon\Carbon::parse($nilaiAkhir->tgl_finalisasi)->format('d M Y') }}.</p>
+                    <div class="mt-2 text-dark small">
+                        <strong>No. Sertifikat:</strong> {{ $nilaiAkhir->no_sertifikat ?? '-' }} <br>
+                        <strong>Periode PKL:</strong> {{ $nilaiAkhir->periode_pkl ?? '-' }} ({{ $nilaiAkhir->total_hari_hadir }} Hari Hadir dari {{ $nilaiAkhir->total_hari_pkl }} Hari Durasi)
+                    </div>
+                </div>
+                <div class="d-flex align-items-center">
+                    <a href="{{ route('nilai.cetak', $siswa->id_siswa) }}" target="_blank" class="btn btn-dark btn-sm rounded-pill px-3 me-4">
+                        <i class="bi bi-printer me-1"></i> Cetak Rapor PDF
+                    </a>
+                    <div class="text-center me-4">
+                        <span class="text-uppercase small text-muted d-block fw-semibold">Nilai Akhir</span>
+                        <h2 class="fw-bold text-primary mb-0">{{ number_format($nilaiAkhir->nilai_akhir_pkl, 1) }}</h2>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-uppercase small text-muted d-block fw-semibold">Grade</span>
+                        <span class="badge bg-warning text-dark fs-4 fw-bold px-3 py-1 rounded-pill">{{ $nilaiAkhir->grade }}</span>
+                    </div>
+                </div>
+            </div>
+            @if($nilaiAkhir->catatan)
+                <div class="alert alert-light border mt-3 mb-0 small text-secondary">
+                    <strong>Catatan Guru/Sekolah:</strong> {{ $nilaiAkhir->catatan }}
+                </div>
+            @endif
+        </div>
+    </div>
+</div>
+@endif
+
+@if(!$penugasanAktif)
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom p-5 text-center shadow-sm border-0">
+                <div class="mb-4">
+                    <div class="d-inline-flex bg-danger-subtle text-danger p-4 rounded-circle">
+                        <i class="bi bi-shield-lock-fill fs-1"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Akses Dasbor Terkunci</h4>
+                <p class="text-secondary mx-auto mb-0" style="max-width: 500px;">
+                    Mohon maaf, Anda belum terdaftar dalam penugasan PKL yang aktif. Silakan hubungi Koordinator PKL atau Guru Pembimbing Sekolah untuk mengalokasikan tempat industri PKL Anda terlebih dahulu.
+                </p>
+                <div class="mt-4">
+                    <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill small">
+                        <i class="bi bg-info-circle me-1"></i> Status PKL Siswa: <strong class="text-capitalize">{{ str_replace('_', ' ', $siswa->status) }}</strong>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+@if($penugasanAktif->status === 'selesai')
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom p-5 text-center shadow-sm border-0 bg-success-subtle text-success">
+                <div class="mb-3">
+                    <i class="bi bi-patch-check-fill fs-2 text-success"></i>
+                </div>
+                <h5 class="fw-bold mb-1">Praktik Kerja Lapangan Selesai</h5>
+                <p class="mb-3 text-secondary small">Anda telah menyelesaikan seluruh rangkaian kegiatan Praktik Kerja Lapangan (PKL) di <strong>{{ $penugasanAktif->industri->nama_industri ?? '-' }}</strong>. Terima kasih atas dedikasi dan kontribusi Anda.</p>
+                @if($nilaiAkhir)
+                    <div>
+                        <span class="badge bg-success text-white px-3 py-2 rounded-pill small">
+                            <i class="bi bi-award-fill me-1"></i> Predikat Kelulusan: Lulus (Grade {{ $nilaiAkhir->grade }})
+                        </span>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+@else
 <div class="row">
     <!-- Absensi Geofencing Card -->
     <div class="col-md-5">
         <div class="card card-custom p-4 shadow-sm mb-4">
             <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Presensi Harian Geofencing</h5>
             
-            @if($kehadiranHariIni && $kehadiranHariIni->jam_masuk && $kehadiranHariIni->jam_keluar)
+            @if($kehadiranHariIni && ($kehadiranHariIni->status_kehadiran !== 'hadir' || ($kehadiranHariIni->waktu_checkin && $kehadiranHariIni->waktu_checkout)))
                 <!-- Case C: Complete for today -->
                 <div class="text-center py-4 mb-0">
                     <i class="bi bi-calendar-check-fill text-success fs-1 mb-2 d-block"></i>
                     <h6 class="fw-bold text-dark">Absensi Hari Ini Lengkap!</h6>
-                    <p class="small text-muted mb-0">Anda telah Check-in Masuk pada <strong>{{ $kehadiranHariIni->jam_masuk }}</strong> dan Check-out Keluar pada <strong>{{ $kehadiranHariIni->jam_keluar }}</strong>.</p>
+                    @if($kehadiranHariIni->status_kehadiran === 'hadir')
+                        <p class="small text-muted mb-0">Anda telah Check-in Masuk pada <strong>{{ $kehadiranHariIni->waktu_checkin }}</strong> dan Check-out Keluar pada <strong>{{ $kehadiranHariIni->waktu_checkout }}</strong>.</p>
+                    @else
+                        <p class="small text-muted mb-0">Kehadiran hari ini tercatat: <span class="badge bg-warning text-dark text-uppercase">{{ $kehadiranHariIni->status_kehadiran }}</span> (Keterangan: {{ $kehadiranHariIni->keterangan_izin ?? '-' }}).</p>
+                    @endif
                 </div>
             @else
                 <div class="alert alert-info border-start border-info border-4 p-2.5 mb-3 small">
@@ -87,7 +169,7 @@
                     <!-- Case B: Checked in, but not checked out yet -->
                     <div class="alert alert-success border-start border-success border-4 py-2 px-3 small mb-4">
                         <i class="bi bi-patch-check-fill me-1"></i>
-                        Anda telah Check-in Masuk pada jam <strong>{{ $kehadiranHariIni->jam_masuk }}</strong>. Jangan lupa Check-out sebelum pulang.
+                        Anda telah Check-in Masuk pada jam <strong>{{ $kehadiranHariIni->waktu_checkin }}</strong>. Jangan lupa Check-out sebelum pulang.
                     </div>
 
                     <!-- Check Out Form -->
@@ -156,6 +238,8 @@
         </div>
     </div>
 </div>
+@endif
+@endif
 @endsection
 
 @section('scripts')

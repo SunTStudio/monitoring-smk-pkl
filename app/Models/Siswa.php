@@ -15,12 +15,17 @@ class Siswa extends Model
     protected $fillable = [
         'nisn', 'nis', 'nama_lengkap', 'kelas', 'jurusan',
         'no_hp', 'email', 'alamat', 'nama_orang_tua', 'no_hp_orang_tua',
-        'id_pengguna_fk', 'status'
+        'id_pengguna_fk', 'status', 'id_kelas_fk'
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'id_pengguna_fk', 'id');
+    }
+
+    public function kelasDetail()
+    {
+        return $this->belongsTo(Kelas::class, 'id_kelas_fk', 'id_kelas');
     }
 
     public function penugasan()

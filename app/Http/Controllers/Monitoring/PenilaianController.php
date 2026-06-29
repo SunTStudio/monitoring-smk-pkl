@@ -158,17 +158,33 @@ class PenilaianController extends Controller
         $nilaiKehadiran = $totalHariPkl > 0 ? (($totalHariHadir / $totalHariPkl) * 100) : 0;
         if ($nilaiKehadiran > 100) $nilaiKehadiran = 100;
 
-        // 2. Ambil Nilai Rata-Rata Sikap
-        $penilaianSikap = PenilaianSikap::where('id_penugasan_fk', $penugasan->id_penugasan)
-            ->where('status', 'finalized')
-            ->first();
-        $nilaiSikap = $penilaianSikap ? $penilaianSikap->nilai_rata_rata_sikap : 0;
+        // 2. Ambil Nilai Rata-Rata Sikap (Dari Nilai Jurnal Guru, fallback ke PenilaianSikap)
+        $rataJurnalGuru = \App\Models\LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
+            ->whereNotNull('nilai_guru')
+            ->avg('nilai_guru');
+        
+        if ($rataJurnalGuru !== null) {
+            $nilaiSikap = (float)$rataJurnalGuru;
+        } else {
+            $penilaianSikap = PenilaianSikap::where('id_penugasan_fk', $penugasan->id_penugasan)
+                ->where('status', 'finalized')
+                ->first();
+            $nilaiSikap = $penilaianSikap ? (float)$penilaianSikap->nilai_rata_rata_sikap : 0.0;
+        }
 
-        // 3. Ambil Nilai Rata-Rata Kompetensi
-        $penilaianKompetensi = PenilaianKompetensi::where('id_penugasan_fk', $penugasan->id_penugasan)
-            ->where('status', 'finalized')
-            ->first();
-        $nilaiKompetensi = $penilaianKompetensi ? $penilaianKompetensi->nilai_rata_rata_kompetensi : 0;
+        // 3. Ambil Nilai Rata-Rata Kompetensi (Dari Nilai Jurnal DUDI, fallback ke PenilaianKompetensi)
+        $rataJurnalDudi = \App\Models\LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
+            ->whereNotNull('nilai_dudi')
+            ->avg('nilai_dudi');
+
+        if ($rataJurnalDudi !== null) {
+            $nilaiKompetensi = (float)$rataJurnalDudi;
+        } else {
+            $penilaianKompetensi = PenilaianKompetensi::where('id_penugasan_fk', $penugasan->id_penugasan)
+                ->where('status', 'finalized')
+                ->first();
+            $nilaiKompetensi = $penilaianKompetensi ? (float)$penilaianKompetensi->nilai_rata_rata_kompetensi : 0.0;
+        }
 
         // 4. Hitung Nilai Akhir Berbobot (Kehadiran 20%, Sikap 30%, Kompetensi 50%)
         $nilaiAkhir = ($nilaiKehadiran * 0.20) + ($nilaiSikap * 0.30) + ($nilaiKompetensi * 0.50);
@@ -214,5 +230,88 @@ class PenilaianController extends Controller
         );
 
         return redirect()->back()->with('success', 'Nilai akhir PKL berhasil difinalisasi dengan nilai: ' . round($nilaiAkhir, 2) . ' (Grade ' . $grade . ').');
+    }
+
+    /**
+     * Cetak Rapor Nilai PKL (Cetak/PDF via browser)
+     */
+    public function cetakRapor($id_siswa)
+    {
+        $siswa = \App\Models\Siswa::with(['kelasDetail'])->findOrFail($id_siswa);
+        $penugasan = \App\Models\Penugasan::with(['industri', 'pembimbingSekolah'])
+            ->where('id_siswa_fk', $id_siswa)
+            ->first();
+
+        if (!$penugasan) {
+            return back()->with('error', 'Siswa belum memiliki penugasan PKL.');
+        }
+
+        $nilaiAkhir = NilaiAkhir::where('id_siswa_fk', $id_siswa)
+            ->where('id_penugasan_fk', $penugasan->id_penugasan)
+            ->first();
+
+        if (!$nilaiAkhir) {
+            return back()->with('error', 'Nilai akhir PKL belum difinalisasi oleh Guru Pembimbing.');
+        }
+
+        return view('admin.nilai.cetak', compact('siswa', 'penugasan', 'nilaiAkhir'));
+    }
+
+    /**
+     * Export Hasil Nilai PKL ke Excel/CSV
+     */
+    public function exportExcel()
+    {
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=nilai_pkl_smk_advance_" . date('Y-m-d') . ".csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $results = NilaiAkhir::with(['siswa.kelasDetail', 'penugasan.industri', 'penugasan.pembimbingSekolah'])->get();
+
+        $columns = [
+            'No', 'NISN', 'NIS', 'Nama Lengkap', 'Kelas', 'Jurusan', 'Tahun Ajaran',
+            'Industri Mitra', 'Guru Pembimbing', 'Nilai Kehadiran (20%)', 
+            'Nilai Sikap (30%)', 'Nilai Kompetensi (50%)', 'Nilai Akhir PKL', 
+            'Grade', 'Status Kelulusan', 'No Sertifikat', 'Tanggal Finalisasi'
+        ];
+
+        $callback = function() use($results, $columns) {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM to support Excel opening with UTF-8 encoding
+            fputs($file, "\xEF\xBB\xBF");
+            
+            fputcsv($file, $columns, ';');
+            
+            foreach ($results as $index => $row) {
+                fputcsv($file, [
+                    $index + 1,
+                    $row->siswa->nisn,
+                    $row->siswa->nis,
+                    $row->siswa->nama_lengkap,
+                    $row->siswa->kelas,
+                    $row->siswa->jurusan,
+                    $row->siswa->kelasDetail->tahun_ajaran ?? '-',
+                    $row->penugasan->industri->nama_industri ?? '-',
+                    $row->penugasan->pembimbingSekolah->name ?? '-',
+                    $row->nilai_kehadiran,
+                    $row->nilai_sikap_bobot,
+                    $row->nilai_kompetensi_bobot,
+                    $row->nilai_akhir_pkl,
+                    $row->grade,
+                    ucfirst(str_replace('_', ' ', $row->status_kelulusan)),
+                    $row->no_sertifikat ?? '-',
+                    $row->tgl_finalisasi ? Carbon::parse($row->tgl_finalisasi)->format('d-m-Y') : '-'
+                ], ';');
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

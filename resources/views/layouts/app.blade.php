@@ -17,6 +17,43 @@
     <!-- Vite Assets -->
     @vite(['resources/sass/app.scss', 'resources/js/app.js'])
 
+    <!-- DataTables Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <style>
+        .dataTables_wrapper .dataTables_length select {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+        }
+        .dataTables_wrapper .dataTables_filter input {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            padding: 4px 12px;
+            font-size: 0.85rem;
+        }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.active .page-link {
+            background-color: #0f172a !important;
+            border-color: #0f172a !important;
+            color: #ffffff !important;
+        }
+        .dataTables_wrapper .dataTables_paginate .page-link {
+            color: #334155;
+            border-radius: 6px;
+            margin: 0 2px;
+        }
+        table.dataTable {
+            border-collapse: collapse !important;
+            margin-top: 15px !important;
+            margin-bottom: 15px !important;
+        }
+        table.dataTable thead th {
+            border-bottom: 2px solid #e2e8f0 !important;
+        }
+    </style>
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -73,6 +110,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/kelas*') ? 'active' : '' }}" href="{{ route('kelas.index') }}">
+                                    <i class="bi bi-folder2-open me-1"></i> Kelas
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {{ request()->is('admin/industri*') ? 'active' : '' }}" href="{{ route('industri.index') }}">
                                     <i class="bi bi-building me-1"></i> Industri
                                 </a>
@@ -80,6 +122,11 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->is('admin/penugasan*') ? 'active' : '' }}" href="{{ route('penugasan.index') }}">
                                     <i class="bi bi-journal-check me-1"></i> Alokasi PKL
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->is('admin/users*') ? 'active' : '' }}" href="{{ route('users.index') }}">
+                                    <i class="bi bi-person-gear me-1"></i> Akun
                                 </a>
                             </li>
                         @endif
@@ -199,10 +246,37 @@
     <!-- Footer -->
     <footer class="bg-dark text-muted py-3 mt-auto border-top border-secondary">
         <div class="container text-center">
-            <p class="mb-0 small">&copy; {{ date('Y') }} E-Monitoring PKL SMK Advance. All rights reserved.</p>
+            <p class="mb-0 small text-light">&copy; {{ date('Y') }} E-Monitoring PKL SMK Advance. All rights reserved.</p>
         </div>
     </footer>
 
+    <!-- jQuery and DataTables CDN JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Auto initialize datatables
+            $('.datatable').DataTable({
+                "language": {
+                    "lengthMenu": "Tampilkan _MENU_ data per halaman",
+                    "zeroRecords": "Data tidak ditemukan",
+                    "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
+                    "infoEmpty": "Tidak ada data tersedia",
+                    "infoFiltered": "(difilter dari _MAX_ total data)",
+                    "search": "Cari Cepat:",
+                    "paginate": {
+                        "first": "Pertama",
+                        "last": "Terakhir",
+                        "next": "Selanjutnya",
+                        "previous": "Sebelumnya"
+                    }
+                },
+                "pageLength": 10,
+                "responsive": true
+            });
+        });
+    </script>
     @yield('scripts')
 </body>
 </html>
