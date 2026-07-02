@@ -9,6 +9,9 @@ use App\Models\DetailPenilaianKompetensi;
 use App\Models\NilaiAkhir;
 use App\Models\Penugasan;
 use App\Models\Kehadiran;
+use App\Models\Siswa;
+use App\Models\Notifikasi;
+use App\Models\LaporanHarian;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,6 +39,12 @@ class PenilaianController extends Controller
             'status' => 'required|in:draft,submitted,finalized',
         ]);
 
+        // BUG-B fix: Verifikasi bahwa pembimbing ini ditugaskan untuk penugasan/siswa ini
+        $penugasan = Penugasan::findOrFail($request->id_penugasan_fk);
+        if ($penugasan->id_pembimbing_fk !== Auth::id()) {
+            abort(403, 'Anda tidak berwenang memberikan penilaian sikap untuk siswa ini.');
+        }
+
         $meanSikap = ($request->nilai_kedisiplinan + $request->nilai_kerjasama + $request->nilai_tanggung_jawab + $request->nilai_inisiatif) / 4;
 
         PenilaianSikap::updateOrCreate(
@@ -60,6 +69,20 @@ class PenilaianController extends Controller
             ]
         );
 
+        // Kirim Notifikasi ke Siswa
+        $siswa = Siswa::find($request->id_siswa_fk);
+        if ($siswa && $siswa->id_pengguna_fk) {
+            Notifikasi::create([
+                'id_pengguna_tujuan_fk' => $siswa->id_pengguna_fk,
+                'judul_notifikasi' => 'Penilaian Sikap Baru',
+                'pesan_notifikasi' => 'Guru pembimbing Anda telah menginput penilaian sikap baru.',
+                'tipe_notifikasi' => 'success',
+                'kategori' => 'nilai',
+                'id_referensi' => $siswa->id_siswa,
+                'tipe_referensi' => 'penilaian_sikap',
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Penilaian sikap berhasil disimpan.');
     }
 
@@ -78,6 +101,12 @@ class PenilaianController extends Controller
             'scores.*.catatan' => 'nullable|string',
             'status' => 'required|in:draft,submitted,finalized',
         ]);
+
+        // BUG-C fix: Verifikasi bahwa industri ini ditugaskan untuk penugasan/siswa ini
+        $penugasan = Penugasan::findOrFail($request->id_penugasan_fk);
+        if ($penugasan->id_pengguna_industri_fk !== Auth::id()) {
+            abort(403, 'Anda tidak berwenang memberikan penilaian kompetensi untuk siswa ini.');
+        }
 
         DB::beginTransaction();
 
@@ -122,6 +151,20 @@ class PenilaianController extends Controller
 
             DB::commit();
 
+            // Kirim Notifikasi ke Siswa
+            $siswa = Siswa::find($request->id_siswa_fk);
+            if ($siswa && $siswa->id_pengguna_fk) {
+                Notifikasi::create([
+                    'id_pengguna_tujuan_fk' => $siswa->id_pengguna_fk,
+                    'judul_notifikasi' => 'Penilaian Kompetensi Baru',
+                    'pesan_notifikasi' => 'Pembimbing Industri (DUDI) telah menginput penilaian kompetensi teknis baru Anda.',
+                    'tipe_notifikasi' => 'success',
+                    'kategori' => 'nilai',
+                    'id_referensi' => $siswa->id_siswa,
+                    'tipe_referensi' => 'penilaian_kompetensi',
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Penilaian aspek kompetensi industri berhasil disimpan.');
 
         } catch (\Exception $e) {
@@ -135,11 +178,21 @@ class PenilaianController extends Controller
      */
     public function finalisasi(Request $request)
     {
+        // BUG-3 fix: Cari record existing untuk exclude dari unique validation
+        $existingNilai = NilaiAkhir::where('id_penugasan_fk', $request->id_penugasan_fk)
+            ->where('id_siswa_fk', $request->id_siswa_fk)
+            ->first();
+
+        $noSertifikatRule = 'nullable|string|max:50|unique:nilai_akhir,no_sertifikat';
+        if ($existingNilai) {
+            $noSertifikatRule .= ',' . $existingNilai->id_nilai_akhir . ',id_nilai_akhir';
+        }
+
         $request->validate([
             'id_penugasan_fk' => 'required|exists:penugasan,id_penugasan',
             'id_siswa_fk' => 'required|exists:siswa,id_siswa',
             'periode_pkl' => 'nullable|string|max:20',
-            'no_sertifikat' => 'nullable|string|max:50|unique:nilai_akhir,no_sertifikat',
+            'no_sertifikat' => $noSertifikatRule,
             'catatan' => 'nullable|string',
         ]);
 
@@ -159,7 +212,7 @@ class PenilaianController extends Controller
         if ($nilaiKehadiran > 100) $nilaiKehadiran = 100;
 
         // 2. Ambil Nilai Rata-Rata Sikap (Dari Nilai Jurnal Guru, fallback ke PenilaianSikap)
-        $rataJurnalGuru = \App\Models\LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
+        $rataJurnalGuru = LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
             ->whereNotNull('nilai_guru')
             ->avg('nilai_guru');
         
@@ -173,7 +226,7 @@ class PenilaianController extends Controller
         }
 
         // 3. Ambil Nilai Rata-Rata Kompetensi (Dari Nilai Jurnal DUDI, fallback ke PenilaianKompetensi)
-        $rataJurnalDudi = \App\Models\LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
+        $rataJurnalDudi = LaporanHarian::where('id_siswa_fk', $request->id_siswa_fk)
             ->whereNotNull('nilai_dudi')
             ->avg('nilai_dudi');
 
@@ -229,6 +282,20 @@ class PenilaianController extends Controller
             ]
         );
 
+        // Kirim Notifikasi ke Siswa
+        $siswa = Siswa::find($request->id_siswa_fk);
+        if ($siswa && $siswa->id_pengguna_fk) {
+            Notifikasi::create([
+                'id_pengguna_tujuan_fk' => $siswa->id_pengguna_fk,
+                'judul_notifikasi' => 'Nilai Akhir Diterbitkan',
+                'pesan_notifikasi' => 'Nilai akhir PKL Anda telah diterbitkan oleh koordinator sekolah dengan nilai ' . round($nilaiAkhir, 2) . ' (Grade ' . $grade . ').',
+                'tipe_notifikasi' => 'success',
+                'kategori' => 'nilai',
+                'id_referensi' => $siswa->id_siswa,
+                'tipe_referensi' => 'nilai_akhir',
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Nilai akhir PKL berhasil difinalisasi dengan nilai: ' . round($nilaiAkhir, 2) . ' (Grade ' . $grade . ').');
     }
 
@@ -237,8 +304,17 @@ class PenilaianController extends Controller
      */
     public function cetakRapor($id_siswa)
     {
-        $siswa = \App\Models\Siswa::with(['kelasDetail'])->findOrFail($id_siswa);
-        $penugasan = \App\Models\Penugasan::with(['industri', 'pembimbingSekolah'])
+        // BUG-12 fix: Otorisasi — siswa hanya bisa cetak rapor sendiri
+        $user = Auth::user();
+        if ($user->hasRole('siswa')) {
+            $mySiswa = Siswa::where('id_pengguna_fk', $user->id)->first();
+            if (!$mySiswa || $mySiswa->id_siswa != $id_siswa) {
+                abort(403, 'Anda tidak memiliki akses untuk mencetak rapor siswa lain.');
+            }
+        }
+
+        $siswa = Siswa::with(['kelasDetail'])->findOrFail($id_siswa);
+        $penugasan = Penugasan::with(['industri', 'pembimbingSekolah'])
             ->where('id_siswa_fk', $id_siswa)
             ->first();
 

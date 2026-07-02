@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Siswa;
+use App\Models\Industri;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -34,7 +36,7 @@ class UserController extends Controller
 
         $users = $query->get();
         $roles = Role::all();
-        $industriList = \App\Models\Industri::all();
+        $industriList = Industri::all();
 
         return view('admin.users.index', compact('users', 'roles', 'activeTab', 'industriList'));
     }
@@ -91,6 +93,11 @@ class UserController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
+        // BUG-D fix: Cegah perubahan peran jika terhubung ke profil siswa master
+        if ($user->hasRole('siswa') && Siswa::where('id_pengguna_fk', $user->id)->exists() && $request->role !== 'siswa') {
+            return back()->withErrors(['role' => 'Peran akun ini tidak dapat diubah karena terhubung ke data siswa master. Harap kelola data siswa di Manajemen Siswa.'])->withInput();
+        }
+
         $userData = [
             'name' => $request->name,
             'username' => $request->username,
@@ -137,7 +144,7 @@ class UserController extends Controller
         }
 
         // Cek jika user ini berelasi sebagai siswa
-        if ($user->hasRole('siswa') && \App\Models\Siswa::where('id_pengguna_fk', $user->id)->exists()) {
+        if ($user->hasRole('siswa') && Siswa::where('id_pengguna_fk', $user->id)->exists()) {
             return redirect()->route('users.index', ['tab' => $tab])->with('error', 'Akun ini terhubung ke data siswa master. Harap hapus data siswa terlebih dahulu di Manajemen Siswa.');
         }
 

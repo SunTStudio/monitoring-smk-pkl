@@ -11,6 +11,24 @@
         z-index: 1;
         border-radius: 8px;
     }
+    .skill-tag-checkbox-wrapper .btn-check:checked + .btn .bi-plus-lg::before {
+        content: "\F272"; /* bootstrap-icons code for bi-check-lg */
+    }
+    .skill-tag-checkbox-wrapper .btn-check:checked + .btn {
+        background-color: var(--bs-primary);
+        color: white;
+        border-color: var(--bs-primary);
+    }
+    .skill-tag-checkbox-wrapper .btn-check:checked + .btn-outline-success {
+        background-color: var(--bs-success);
+        color: white;
+        border-color: var(--bs-success);
+    }
+    .btn-xs {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        border-radius: 0.2rem;
+    }
 </style>
 @endsection
 
@@ -30,7 +48,7 @@
                 </div>
                 <div>
                     <h4 class="fw-bold mb-1">Dashboard Siswa PKL</h4>
-                    <p class="mb-0 text-white-50">Selamat datang kembali, <strong>{{ Auth::user()->name }}</strong>. Silakan isi absensi geofencing dan jurnal harian Anda.</p>
+                    <p class="mb-0 text-white-50">Selamat datang kembali, <strong>{{ Auth::user()->name }}</strong>. Silakan isi absensi dan jurnal harian Anda.</p>
                 </div>
             </div>
         </div>
@@ -95,6 +113,7 @@
             </div>
         </div>
     </div>
+@else
 @if($penugasanAktif->status === 'selesai')
     <div class="row">
         <div class="col-12">
@@ -116,10 +135,10 @@
     </div>
 @else
 <div class="row">
-    <!-- Absensi Geofencing Card -->
+    <!-- Absensi  Card -->
     <div class="col-md-5">
         <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Presensi Harian Geofencing</h5>
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-geo-alt-fill text-danger me-2"></i> Presensi Harian </h5>
             
             @if($kehadiranHariIni && ($kehadiranHariIni->status_kehadiran !== 'hadir' || ($kehadiranHariIni->waktu_checkin && $kehadiranHariIni->waktu_checkout)))
                 <!-- Case C: Complete for today -->
@@ -159,7 +178,7 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Selfie / Foto Bukti Masuk</label>
-                            <input type="file" class="form-control form-control-sm bg-light" name="bukti_foto" required>
+                            <input type="file" class="form-control form-control-sm bg-light" name="bukti_foto" accept="image/*" required>
                         </div>
                         <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">
                             <i class="bi bi-box-arrow-in-right"></i> Check-in Absen Masuk
@@ -177,7 +196,7 @@
                         @csrf
                         <div class="mb-3">
                             <label class="form-label small fw-semibold">Selfie / Foto Bukti Keluar</label>
-                            <input type="file" class="form-control form-control-sm bg-light" name="bukti_foto" required>
+                            <input type="file" class="form-control form-control-sm bg-light" name="bukti_foto" accept="image/*" required>
                         </div>
                         <button type="submit" class="btn btn-outline-dark btn-sm w-100 fw-bold">
                             <i class="bi bi-box-arrow-out-right"></i> Check-out Absen Keluar
@@ -215,19 +234,73 @@
                     <textarea class="form-control bg-light" name="aktivitas_pekerjaan" rows="3" placeholder="Deskripsikan pekerjaan hari ini..." required></textarea>
                 </div>
 
-                <div class="mb-3">
+                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Hasil Pekerjaan (Output) / Deskripsi Bukti Fisik</label>
                     <input type="text" class="form-control form-control-sm bg-light" name="hasil_pekerjaan" placeholder="Misal: Produk sabun cair / Laporan analisis pH larutan / Perakitan PC selesai / Source code" required>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold text-secondary d-block mb-2">
+                        <i class="bi bi-patch-check-fill text-primary me-1"></i> Hubungkan dengan Aspek Kompetensi / Skill (Jurusan & Karakter)
+                    </label>
+                    
+                    @if(isset($skills) && $skills->count() > 0)
+                        <div class="p-3 bg-light rounded border border-secondary-subtle">
+                            <!-- Hard Skills -->
+                            @if($skills->where('kategori', 'hardskill')->count() > 0)
+                                <div class="mb-3">
+                                    <span class="badge bg-primary text-white mb-2 px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                        Hard Skills (Keahlian Jurusan)
+                                    </span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($skills->where('kategori', 'hardskill') as $skill)
+                                            <div class="skill-tag-checkbox-wrapper">
+                                                <input type="checkbox" name="skill_ids[]" id="skill_{{ $skill->id_kompetensi }}" value="{{ $skill->id_kompetensi }}" class="btn-check">
+                                                <label class="btn btn-outline-primary btn-xs rounded-pill px-2.5 py-1 text-start d-inline-flex align-items-center gap-1" for="skill_{{ $skill->id_kompetensi }}">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                    {{ $skill->nama_aspek }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Soft Skills -->
+                            @if($skills->where('kategori', 'softskill')->count() > 0)
+                                <div>
+                                    <span class="badge bg-success text-white mb-2 px-2.5 py-1 text-uppercase fw-bold" style="font-size: 0.65rem; letter-spacing: 0.5px;">
+                                        Soft Skills & Karakter Kerja
+                                    </span>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach($skills->where('kategori', 'softskill') as $skill)
+                                            <div class="skill-tag-checkbox-wrapper">
+                                                <input type="checkbox" name="skill_ids[]" id="skill_{{ $skill->id_kompetensi }}" value="{{ $skill->id_kompetensi }}" class="btn-check">
+                                                <label class="btn btn-outline-success btn-xs rounded-pill px-2.5 py-1 text-start d-inline-flex align-items-center gap-1" for="skill_{{ $skill->id_kompetensi }}">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                    {{ $skill->nama_aspek }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="alert alert-warning py-2 px-3 mb-0 small">
+                            <i class="bi bi-exclamation-circle-fill me-1"></i> Data aspek kompetensi untuk jurusan <strong>{{ $siswa->jurusan ?? '-' }}</strong> belum dikonfigurasi.
+                        </div>
+                    @endif
+                </div>
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label small fw-semibold">Skill Yang Dipraktikkan</label>
-                        <input type="text" class="form-control form-control-sm bg-light" name="skill_dipraktikkan" placeholder="Misal: Analisis Lab, K3, Laravel, Git" required>
+                        <label class="form-label small fw-semibold">Skill Tambahan / Keterangan Lain (Opsional)</label>
+                        <input type="text" class="form-control form-control-sm bg-light" name="skill_dipraktikkan" placeholder="Misal: Analisis Lab, K3, Laravel, Git">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label small fw-semibold">Upload File Lampiran / Foto Bukti Hasil Pekerjaan (PDF/Img)</label>
-                        <input type="file" class="form-control form-control-sm bg-light" name="file_lampiran">
+                        <input type="file" class="form-control form-control-sm bg-light" name="file_lampiran" accept="image/*,application/pdf">
                     </div>
                 </div>
 
@@ -372,14 +445,17 @@
         if (checkInForm) {
             checkInForm.addEventListener('submit', function(e) {
                 var fileInput = checkInForm.querySelector('input[name="bukti_foto"]');
+                var submitBtn = checkInForm.querySelector('button[type="submit"]');
+                
                 if (fileInput && fileInput.files.length > 0) {
                     var file = fileInput.files[0];
                     if (file.size < 250 * 1024) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Absen Masuk...';
                         return;
                     }
                     
                     e.preventDefault();
-                    var submitBtn = checkInForm.querySelector('button[type="submit"]');
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengompres Foto...';
                     
@@ -389,6 +465,9 @@
                         fileInput.files = dataTransfer.files;
                         checkInForm.submit();
                     });
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Absen Masuk...';
                 }
             });
         }
@@ -398,14 +477,17 @@
         if (checkOutForm) {
             checkOutForm.addEventListener('submit', function(e) {
                 var fileInput = checkOutForm.querySelector('input[name="bukti_foto"]');
+                var submitBtn = checkOutForm.querySelector('button[type="submit"]');
+                
                 if (fileInput && fileInput.files.length > 0) {
                     var file = fileInput.files[0];
                     if (file.size < 250 * 1024) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Absen Keluar...';
                         return;
                     }
                     
                     e.preventDefault();
-                    var submitBtn = checkOutForm.querySelector('button[type="submit"]');
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengompres Foto...';
                     
@@ -415,9 +497,62 @@
                         fileInput.files = dataTransfer.files;
                         checkOutForm.submit();
                     });
+                } else {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Absen Keluar...';
                 }
             });
         }
+
+        // Jurnal Form submit handler
+        var jurnalForm = document.querySelector('form[action="{{ route("laporan.store") }}"]');
+        if (jurnalForm) {
+            jurnalForm.addEventListener('submit', function(e) {
+                var submitBtn = jurnalForm.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengirim Jurnal...';
+            });
+        }
+
+        // Client-side file type verification
+        document.querySelectorAll('input[type="file"]').forEach(function(input) {
+            input.addEventListener('change', function() {
+                if (this.files.length === 0) return;
+                var file = this.files[0];
+                var accept = this.getAttribute('accept');
+                if (!accept) return;
+                
+                var fileType = file.type;
+                var isValid = false;
+                
+                if (accept === 'image/*') {
+                    if (fileType.startsWith('image/')) {
+                        isValid = true;
+                    }
+                } else {
+                    var allowedTypes = accept.split(',');
+                    for (var i = 0; i < allowedTypes.length; i++) {
+                        var type = allowedTypes[i].trim();
+                        if (type === 'image/*') {
+                            if (fileType.startsWith('image/')) {
+                                isValid = true;
+                                break;
+                            }
+                        } else if (type === 'application/pdf') {
+                            if (fileType === 'application/pdf') {
+                                isValid = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!isValid) {
+                    alert('Format file tidak sesuai! Hanya diperbolehkan format: ' + accept);
+                    this.value = ''; // Reset input
+                }
+            });
+        });
     });
 </script>
 @endsection

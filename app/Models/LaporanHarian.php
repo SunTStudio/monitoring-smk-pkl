@@ -35,4 +35,17 @@ class LaporanHarian extends Model
     {
         return $this->belongsTo(User::class, 'id_pembimbing_review', 'id');
     }
+
+    // Many-to-many: skill tags yang dipakai dalam jurnal ini
+    public function skillTags()
+    {
+        return $this->belongsToMany(
+            KompetensiJurusan::class,
+            'laporan_skill_tag',
+            'id_laporan_fk',
+            'id_kompetensi_fk',
+            'id_laporan',
+            'id_kompetensi'
+        )->withTimestamps();
+    }
 }

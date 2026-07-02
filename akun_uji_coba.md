@@ -9,9 +9,12 @@ Gunakan data akun di bawah ini untuk mencoba login ke sistem E-Monitoring PKL de
 | **Admin** | `admin` | `admin@smkadvance.sch.id` | `password123` | `/admin/dashboard` | Akun administrator sekolah |
 | **Guru Pembimbing** | `pembimbing` | `pembimbing@smkadvance.sch.id` | `password123` | `/pembimbing/dashboard` | Ibu Siti Nurhaliza, S.Pd. (RPL) |
 | **Koordinator PKL** | `koordinator` | `koordinator@smkadvance.sch.id` | `password123` | `/admin/dashboard` | Bapak Bambang Riyanto, M.T. |
-| **Mitra Industri (DU-DI)** | `industri` | `industri@smkadvance.sch.id` | `password123` | `/industri/dashboard` | PT ABC Electronics (Budi Utomo) |
-| **Siswa 1 (RPL)** | `0051234567` | `siswa@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Ahmad Maulana (Aktif PKL di PT ABC) |
-| **Siswa 2 (TKJ)** | `0067654321` | `dewi@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Dewi Lestari (Belum ditempatkan) |
+| **Mitra Industri (DU-DI) 1** | `industri` | `industri@smkadvance.sch.id` | `password123` | `/industri/dashboard` | PT ABC Electronics (Budi Utomo) |
+| **Mitra Industri (DU-DI) 2** | `suparno` | `suparno@gmail.com` | `password123` | `/industri/dashboard` | PT Strapa Hidekata (Oga Itari) |
+| **Siswa 1 (RPL - Aktif)** | `0051234567` | `siswa@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Ahmad Maulana (Aktif PKL di PT ABC) |
+| **Siswa 2 (TKJ - Aktif)** | `0067654321` | `dewi@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Dewi Lestari (Belum ditempatkan) |
+| **Siswa 3 (RPL - Alumni)** | `0041112223` | `budi.alumni@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Budi Santoso (Selesai PKL 2024 di PT ABC) |
+| **Siswa 4 (TKJ - Alumni)** | `0049998887` | `citra.alumni@smkadvance.sch.id` | `password123` | `/siswa/dashboard` | Citra Lestari (Selesai PKL 2024) |
 
 *Catatan: Anda dapat login menggunakan **Username** atau **Email** di atas.*
 

@@ -29,7 +29,7 @@
                 </div>
                 <div>
                     <h4 class="fw-bold mb-1">Riwayat Aktivitas & Kehadiran</h4>
-                    <p class="mb-0 text-white-50">Temukan rekaman kehadiran harian geofencing dan jurnal laporan kerja magang Anda di bawah.</p>
+                    <p class="mb-0 text-white-50">Temukan rekaman kehadiran harian  dan jurnal laporan kerja magang Anda di bawah.</p>
                 </div>
             </div>
         </div>
@@ -140,7 +140,7 @@
                 <!-- 1. RIWAYAT ABSENSI -->
                 <div class="tab-pane fade show active" id="absensi" role="tabpanel" aria-labelledby="absensi-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle table-responsive-stack">
+                        <table class="table table-hover align-middle table-responsive-stack datatable">
                             <thead class="table-light">
                                 <tr>
                                     <th>Tanggal</th>
@@ -217,7 +217,7 @@
                 <!-- 2. RIWAYAT JURNAL HARIAN -->
                 <div class="tab-pane fade" id="jurnal" role="tabpanel" aria-labelledby="jurnal-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle table-responsive-stack">
+                        <table class="table table-hover align-middle table-responsive-stack datatable">
                             <thead class="table-light">
                                 <tr>
                                     <th>Tanggal</th>
@@ -245,7 +245,22 @@
                                             <small class="text-secondary">{{ $l->hasil_pekerjaan ?? '-' }}</small>
                                         </td>
                                         <td data-label="Skill">
-                                            <span class="badge bg-light text-dark border small">{{ $l->skill_dipraktikkan ?? '-' }}</span>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @forelse($l->skillTags as $st)
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem; font-weight: 500;">
+                                                        {{ $st->nama_aspek }}
+                                                    </span>
+                                                @empty
+                                                @endforelse
+                                                @if($l->skill_dipraktikkan)
+                                                    <span class="badge bg-light text-dark border" style="font-size: 0.7rem; font-weight: 500;" title="Input Manual">
+                                                        {{ $l->skill_dipraktikkan }}
+                                                    </span>
+                                                @endif
+                                                @if($l->skillTags->isEmpty() && !$l->skill_dipraktikkan)
+                                                    <span class="text-muted small">-</span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td data-label="Lampiran">
                                             @if($l->file_lampiran)
@@ -320,9 +335,26 @@
                             <td class="text-dark">{{ \Carbon\Carbon::parse($l->jam_mulai_kerja)->format('H:i') }} - {{ \Carbon\Carbon::parse($l->jam_selesai_kerja)->format('H:i') }}</td>
                         </tr>
                         <tr>
-                            <td class="fw-semibold text-secondary">Skill Dipraktikkan</td>
+                            <td class="fw-semibold text-secondary">Aspek Skill Terkait</td>
                             <td>:</td>
-                            <td><span class="badge bg-light text-dark border small">{{ $l->skill_dipraktikkan ?? '-' }}</span></td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    @forelse($l->skillTags as $st)
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size: 0.7rem; font-weight: 500;">
+                                            {{ $st->nama_aspek }}
+                                        </span>
+                                    @empty
+                                    @endforelse
+                                    @if($l->skill_dipraktikkan)
+                                        <span class="badge bg-light text-dark border" style="font-size: 0.7rem; font-weight: 500;">
+                                            {{ $l->skill_dipraktikkan }}
+                                        </span>
+                                    @endif
+                                    @if($l->skillTags->isEmpty() && !$l->skill_dipraktikkan)
+                                        <span class="text-muted small">-</span>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                     </table>
 

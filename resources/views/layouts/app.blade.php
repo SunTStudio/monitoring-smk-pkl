@@ -77,6 +77,42 @@
             padding: 4px 8px;
             border-radius: 20px;
         }
+        
+        /* Premium Custom Dropdown styling */
+        .dropdown-menu-custom {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+            padding: 8px;
+            background-color: #ffffff;
+        }
+        .dropdown-menu-custom .dropdown-item {
+            font-weight: 500;
+            color: #475569;
+            border-radius: 8px;
+            padding: 8px 16px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+        }
+        .dropdown-menu-custom .dropdown-item i {
+            font-size: 1.1rem;
+            transition: transform 0.2s ease;
+        }
+        .dropdown-menu-custom .dropdown-item:hover {
+            background-color: #f1f5f9;
+            color: #0f172a;
+        }
+        .dropdown-menu-custom .dropdown-item:hover i {
+            transform: scale(1.1);
+        }
+        .dropdown-menu-custom .dropdown-item.active {
+            background-color: #0f172a;
+            color: #ffffff;
+        }
+        .dropdown-menu-custom .dropdown-item.active i {
+            color: #ffffff !important;
+        }
     </style>
     @yield('styles')
 </head>
@@ -140,10 +176,27 @@
                         @endif
 
                         @if(Auth::user()->hasRole('industri'))
-                            <li class="nav-item">
-                                <a class="nav-link {{ request()->is('industri/dashboard') ? 'active' : '' }}" href="{{ route('industri.dashboard') }}">
-                                    <i class="bi bi-speedometer2 me-1"></i> Dashboard Industri
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle {{ request()->is('industri/dashboard*') ? 'active' : '' }}" href="#" id="industriDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-building me-1"></i> Dashboard Industri
                                 </a>
+                                <ul class="dropdown-menu dropdown-menu-custom mt-2 shadow" aria-labelledby="industriDropdown">
+                                    <li>
+                                        <a class="dropdown-item {{ request()->is('industri/dashboard') && !request('tab') ? 'active' : '' }}" href="{{ route('industri.dashboard', request()->only(['siswa_id', 'tgl_mulai', 'tgl_akhir'])) }}">
+                                            <i class="bi bi-speedometer2 me-2 text-warning"></i> Dashboard Utama
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request('tab') == 'kehadiran' ? 'active' : '' }}" href="{{ route('industri.dashboard', array_merge(request()->only(['siswa_id', 'tgl_mulai', 'tgl_akhir']), ['tab' => 'kehadiran'])) }}">
+                                            <i class="bi bi-geo-alt-fill me-2 text-danger"></i> Log Kehadiran Siswa
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {{ request('tab') == 'jurnal' ? 'active' : '' }}" href="{{ route('industri.dashboard', array_merge(request()->only(['siswa_id', 'tgl_mulai', 'tgl_akhir']), ['tab' => 'jurnal'])) }}">
+                                            <i class="bi bi-journal-richtext me-2 text-primary"></i> Jurnal Harian Siswa
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         @endif
 
@@ -165,6 +218,73 @@
                 <!-- Right Profile / Auth Action -->
                 <div class="d-flex align-items-center">
                     @auth
+                        {{-- BUG-15 fix: Notifikasi sekarang di-inject oleh ViewServiceProvider --}}
+                        {{-- $unreadNotifications dan $allNotifications sudah tersedia via ViewComposer --}}
+                        <div class="dropdown me-3">
+                            <button class="btn btn-link text-white position-relative p-1" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="text-decoration: none;">
+                                <i class="bi bi-bell fs-5"></i>
+                                @if($unreadNotifications->count() > 0)
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.25em 0.5em;">
+                                        {{ $unreadNotifications->count() }}
+                                    </span>
+                                @endif
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-0" aria-labelledby="notificationDropdown" style="width: 320px; font-size: 0.825rem; max-height: 400px; overflow-y: auto;">
+                                <li class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light rounded-top">
+                                    <h6 class="fw-bold mb-0 text-dark">Notifikasi</h6>
+                                    @if($unreadNotifications->count() > 0)
+                                        <form action="{{ route('notifikasi.read-all') }}" method="POST" class="m-0">
+                                            @csrf
+                                            <button type="submit" class="btn btn-link p-0 text-primary text-decoration-none small fw-semibold" style="font-size: 0.75rem;">
+                                                Tandai Semua Dibaca
+                                            </button>
+                                        </form>
+                                    @endif
+                                </li>
+                                @forelse($allNotifications as $notif)
+                                    @php
+                                        // Dynamic action link resolver
+                                        $targetLink = '#';
+                                        if ($notif->tipe_referensi === 'laporan_harian') {
+                                            if (Auth::user()->hasRole('pembimbing')) {
+                                                $targetLink = route('pembimbing.dashboard', ['siswa_id' => $notif->id_referensi]);
+                                            } elseif (Auth::user()->hasRole('industri')) {
+                                                $targetLink = route('industri.dashboard', ['siswa_id' => $notif->id_referensi]);
+                                            }
+                                        } elseif (in_array($notif->tipe_referensi, ['penilaian_sikap', 'penilaian_kompetensi', 'nilai_akhir'])) {
+                                            $targetLink = route('siswa.dashboard');
+                                        }
+                                        
+                                        $bgClass = $notif->status_dibaca ? '' : 'bg-light border-start border-primary border-3';
+                                        $iconClass = 'bi-info-circle text-info';
+                                        if ($notif->tipe_notifikasi === 'success') $iconClass = 'bi-check-circle text-success';
+                                        if ($notif->tipe_notifikasi === 'warning') $iconClass = 'bi-exclamation-triangle text-warning';
+                                        if ($notif->tipe_notifikasi === 'error') $iconClass = 'bi-exclamation-octagon text-danger';
+                                    @endphp
+                                    <li class="{{ $bgClass }}">
+                                        <a class="dropdown-item d-flex gap-3 px-3 py-2.5 text-wrap border-bottom align-items-start" href="{{ route('notifikasi.read-and-redirect', $notif->id_notifikasi) }}">
+                                            <div class="flex-shrink-0 mt-0.5">
+                                                <i class="bi {{ $iconClass }} fs-6"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold text-dark">{{ $notif->judul_notifikasi }}</div>
+                                                <div class="text-secondary small mt-0.5" style="line-height: 1.25;">{{ $notif->pesan_notifikasi }}</div>
+                                                <div class="text-muted small mt-1" style="font-size: 0.7rem;">
+                                                    {{ \Carbon\Carbon::parse($notif->tgl_notifikasi)->diffForHumans() }}
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                @empty
+                                    <li class="p-4 text-center text-muted">
+                                        <i class="bi bi-bell-slash fs-4 mb-2 d-block text-secondary"></i>
+                                        Tidak ada notifikasi baru
+                                    </li>
+                                @endforelse
+                            </ul>
+                        </div>
+
+                        <!-- Profile Dropdown -->
                         <div class="dropdown">
                             <button class="btn btn-outline-light dropdown-toggle btn-sm d-flex align-items-center gap-2 px-3 py-1.5 rounded-pill" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle fs-6"></i>

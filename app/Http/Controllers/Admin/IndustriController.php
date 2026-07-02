@@ -77,6 +77,12 @@ class IndustriController extends Controller
     public function destroy($id)
     {
         $industri = Industri::findOrFail($id);
+
+        // BUG-17 fix: Cek apakah industri memiliki data penugasan terkait
+        if ($industri->penugasan()->exists()) {
+            return back()->withErrors(['error' => 'Industri tidak dapat dihapus karena masih memiliki data penugasan PKL. Ubah status industri menjadi "non_aktif" sebagai gantinya.']);
+        }
+
         $industri->delete();
 
         return redirect()->route('industri.index')->with('success', 'Data industri berhasil dihapus.');

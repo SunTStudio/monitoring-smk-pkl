@@ -35,23 +35,39 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card card-custom p-3 shadow-sm border-0">
-            <form method="GET" action="{{ route('pembimbing.dashboard') }}" class="row align-items-center">
-                <div class="col-md-6 mb-2 mb-md-0">
-                    <h6 class="fw-bold text-dark mb-0">
-                        <i class="bi bi-funnel-fill text-success me-2"></i> 
-                        Filter & Penilaian Sikap Per Siswa
-                    </h6>
-                    <small class="text-muted">Pilih siswa bimbingan di bawah untuk memantau log, jurnal harian, dan mengisi penilaian sikap secara terpisah.</small>
-                </div>
-                <div class="col-md-6">
-                    <select name="siswa_id" class="form-select bg-light" onchange="this.form.submit()">
-                        <option value="">-- Tampilkan Semua Siswa Bimbingan --</option>
-                        @foreach($penugasan as $item)
-                            <option value="{{ $item->id_siswa_fk }}" {{ $selectedSiswaId == $item->id_siswa_fk ? 'selected' : '' }}>
-                                {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->kelas }} - {{ $item->siswa->jurusan }})
-                            </option>
-                        @endforeach
-                    </select>
+            <form method="GET" action="{{ route('pembimbing.dashboard') }}">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            <i class="bi bi-funnel-fill text-success me-1"></i> Pilih Siswa PKL
+                        </label>
+                        <select name="siswa_id" class="form-select form-select-sm bg-light" onchange="this.form.submit()">
+                            <option value="">-- Tampilkan Semua Siswa Bimbingan --</option>
+                            @foreach($penugasan as $item)
+                                <option value="{{ $item->id_siswa_fk }}" {{ $selectedSiswaId == $item->id_siswa_fk ? 'selected' : '' }}>
+                                    {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->kelas }} - {{ $item->siswa->jurusan }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Dari Tanggal</label>
+                        <input type="date" class="form-control form-control-sm bg-light" name="tgl_mulai" value="{{ $tglMulai ?? '' }}">
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Sampai Tanggal</label>
+                        <input type="date" class="form-control form-control-sm bg-light" name="tgl_akhir" value="{{ $tglAkhir ?? '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-success btn-sm w-100 fw-bold">
+                            <i class="bi bi-filter"></i> Filter
+                        </button>
+                        @if($selectedSiswaId || $tglMulai || $tglAkhir)
+                            <a href="{{ route('pembimbing.dashboard') }}" class="btn btn-outline-secondary btn-sm fw-bold d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </form>
         </div>
@@ -66,7 +82,7 @@
             <div class="card card-custom p-4 shadow-sm mb-4">
                 <h5 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-success me-2"></i> Siswa PKL Bimbingan Aktif</h5>
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
+                    <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
                         <thead class="table-light">
                             <tr>
                                 <th>Nama Siswa</th>
@@ -111,7 +127,7 @@
                 Log Kehadiran {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa Bimbingan' }}
             </h5>
             <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
+                <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
                             <th>Tanggal</th>
@@ -202,7 +218,7 @@
                 Jurnal Harian {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa Bimbingan' }}
             </h5>
             <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
+                <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
                     <thead class="table-light">
                         <tr>
                             <th>Tanggal</th>
@@ -254,6 +270,7 @@
                                         data-activity="{{ $jurnal->aktivitas_pekerjaan }}"
                                         data-output="{{ $jurnal->hasil_pekerjaan ?? '-' }}"
                                         data-skills="{{ $jurnal->skill_dipraktikkan ?? '-' }}"
+                                        data-skill-tags="{{ $jurnal->skillTags->pluck('nama_aspek')->implode(', ') }}"
                                         data-feedback="{{ $jurnal->feedback_pembimbing }}"
                                         data-status="{{ $jurnal->status ?? 'approved' }}"
                                         data-nilai="{{ $jurnal->nilai_guru }}">
@@ -431,7 +448,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="foto_kunjungan" class="form-label fw-medium text-secondary small">Foto Bukti Kunjungan (Dokumentasi)</label>
-                    <input type="file" class="form-control bg-light" name="foto_kunjungan">
+                    <input type="file" class="form-control bg-light" name="foto_kunjungan" accept="image/*">
                 </div>
                 <div class="d-grid">
                     <button type="submit" class="btn btn-dark btn-sm fw-semibold">Simpan Catatan Kunjungan</button>
@@ -606,6 +623,61 @@
             // Set dynamic action URL
             var form = document.getElementById('reviewForm');
             form.setAttribute('action', '/laporan/review/' + id);
+        });
+
+        // Client-side file type verification
+        document.querySelectorAll('input[type="file"]').forEach(function(input) {
+            input.addEventListener('change', function() {
+                if (this.files.length === 0) return;
+                var file = this.files[0];
+                var accept = this.getAttribute('accept');
+                if (!accept) return;
+                
+                var fileType = file.type;
+                var isValid = false;
+                
+                if (accept === 'image/*') {
+                    if (fileType.startsWith('image/')) {
+                        isValid = true;
+                    }
+                } else {
+                    var allowedTypes = accept.split(',');
+                    for (var i = 0; i < allowedTypes.length; i++) {
+                        var type = allowedTypes[i].trim();
+                        if (type === 'image/*') {
+                            if (fileType.startsWith('image/')) {
+                                isValid = true;
+                                break;
+                            }
+                        } else if (type === 'application/pdf') {
+                            if (fileType === 'application/pdf') {
+                                isValid = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (!isValid) {
+                    alert('Format file tidak sesuai! Hanya diperbolehkan format: ' + accept);
+                    this.value = ''; // Reset input
+                }
+            });
+        });
+
+        // Universal form submit loading handler
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function() {
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    setTimeout(function() {
+                        submitBtn.disabled = true;
+                    }, 0);
+                    
+                    var text = submitBtn.innerText.trim();
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ' + text + '...';
+                }
+            });
         });
     });
 </script>

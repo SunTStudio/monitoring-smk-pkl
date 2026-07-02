@@ -11,10 +11,60 @@
         z-index: 1;
         border-radius: 8px;
     }
+    
+    /* Premium Nav-Pills (Tab Menu) */
+    .custom-tab-container {
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        padding: 5px;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        border-radius: 10px;
+    }
+    .custom-tab-container .nav-link {
+        color: #64748b;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border: none;
+        padding: 10px 18px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+    }
+    .custom-tab-container .nav-link i {
+        font-size: 1.05rem;
+        transition: transform 0.25s ease;
+    }
+    .custom-tab-container .nav-link:not(.active):hover {
+        color: #0f172a;
+        background-color: #ffffff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transform: translateY(-1px);
+    }
+    .custom-tab-container .nav-link:not(.active):hover i {
+        transform: scale(1.1);
+    }
+    .custom-tab-container .nav-link.active {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        transform: translateY(-1px);
+    }
+    .custom-tab-container .nav-link.active i {
+        color: #ffffff !important;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
 </style>
 @endsection
 
 @section('content')
+@php
+    $activeTab = request('tab', $selectedSiswaId ? 'kehadiran' : 'siswa');
+    if ($selectedSiswaId && $activeTab === 'siswa') {
+        $activeTab = 'kehadiran';
+    }
+@endphp
 <div class="row mb-4">
     <div class="col-12">
         <div class="card card-custom p-4 shadow-sm bg-dark text-white border-0">
@@ -35,23 +85,40 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card card-custom p-3 shadow-sm border-0">
-            <form method="GET" action="{{ route('industri.dashboard') }}" class="row align-items-center">
-                <div class="col-md-6 mb-2 mb-md-0">
-                    <h6 class="fw-bold text-dark mb-0">
-                        <i class="bi bi-funnel-fill text-warning me-2"></i> 
-                        Filter & Penilaian Mandiri Per Siswa
-                    </h6>
-                    <small class="text-muted">Pilih siswa di bawah untuk melihat log presensi, jurnal harian, dan menginput nilai kompetensi teknis secara terpisah.</small>
-                </div>
-                <div class="col-md-6">
-                    <select name="siswa_id" class="form-select bg-light" onchange="this.form.submit()">
-                        <option value="">-- Tampilkan Semua Siswa Magang --</option>
-                        @foreach($penugasan as $item)
-                            <option value="{{ $item->id_siswa_fk }}" {{ $selectedSiswaId == $item->id_siswa_fk ? 'selected' : '' }}>
-                                {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->kelas }} - {{ $item->siswa->jurusan }})
-                            </option>
-                        @endforeach
-                    </select>
+            <form method="GET" action="{{ route('industri.dashboard') }}">
+                <input type="hidden" name="tab" id="filter-tab-input" value="{{ $activeTab }}">
+                <div class="row align-items-end">
+                    <div class="col-md-4 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">
+                            <i class="bi bi-funnel-fill text-warning me-1"></i> Pilih Siswa PKL
+                        </label>
+                        <select name="siswa_id" class="form-select form-select-sm bg-light" onchange="this.form.submit()">
+                            <option value="">-- Tampilkan Semua Siswa Magang --</option>
+                            @foreach($penugasan as $item)
+                                <option value="{{ $item->id_siswa_fk }}" {{ $selectedSiswaId == $item->id_siswa_fk ? 'selected' : '' }}>
+                                    {{ $item->siswa->nama_lengkap }} ({{ $item->siswa->kelas }} - {{ $item->siswa->jurusan }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Dari Tanggal</label>
+                        <input type="date" class="form-control form-control-sm bg-light" name="tgl_mulai" value="{{ $tglMulai ?? '' }}">
+                    </div>
+                    <div class="col-md-3 mb-2 mb-md-0">
+                        <label class="form-label small fw-semibold text-secondary mb-1">Sampai Tanggal</label>
+                        <input type="date" class="form-control form-control-sm bg-light" name="tgl_akhir" value="{{ $tglAkhir ?? '' }}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-warning btn-sm w-100 fw-bold text-dark">
+                            <i class="bi bi-filter"></i> Filter
+                        </button>
+                        @if($selectedSiswaId || $tglMulai || $tglAkhir)
+                            <a href="{{ route('industri.dashboard') }}" class="btn btn-outline-secondary btn-sm fw-bold d-inline-flex align-items-center justify-content-center">
+                                <i class="bi bi-x-circle"></i>
+                            </a>
+                        @endif
+                    </div>
                 </div>
             </form>
         </div>
@@ -61,213 +128,243 @@
 <div class="row">
     <!-- Siswa Magang & Log Presensi -->
     <div class="col-md-8">
-        @if(!$selectedSiswaId)
-            <!-- Siswa PKL Magang Card (Hanya muncul jika belum memfilter siswa) -->
-            <div class="card card-custom p-4 shadow-sm mb-4">
-                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-warning me-2"></i> Siswa PKL Magang Aktif</h5>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nama Siswa</th>
-                                <th>Jurusan</th>
-                                <th>Tanggal Mulai</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($penugasan as $item)
+        <!-- Navigation Tabs (Pills) -->
+        <ul class="nav nav-pills nav-fill mb-4 custom-tab-container" id="industriTab" role="tablist">
+            @if(!$selectedSiswaId)
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {{ $activeTab === 'siswa' ? 'active' : '' }} fw-bold" id="siswa-tab" data-bs-toggle="tab" data-bs-target="#siswa" type="button" role="tab" aria-controls="siswa" aria-selected="{{ $activeTab === 'siswa' ? 'true' : 'false' }}">
+                        <i class="bi bi-people-fill text-warning me-1"></i> Siswa PKL Magang
+                    </button>
+                </li>
+            @endif
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ $activeTab === 'kehadiran' ? 'active' : '' }} fw-bold" id="kehadiran-tab" data-bs-toggle="tab" data-bs-target="#kehadiran" type="button" role="tab" aria-controls="kehadiran" aria-selected="{{ $activeTab === 'kehadiran' ? 'true' : 'false' }}">
+                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> Log Kehadiran {{ $selectedSiswa ? 'Siswa' : 'Semua Siswa' }}
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link {{ $activeTab === 'jurnal' ? 'active' : '' }} fw-bold" id="jurnal-tab" data-bs-toggle="tab" data-bs-target="#jurnal" type="button" role="tab" aria-controls="jurnal" aria-selected="{{ $activeTab === 'jurnal' ? 'true' : 'false' }}">
+                    <i class="bi bi-journal-richtext text-primary me-1"></i> Jurnal Harian {{ $selectedSiswa ? 'Siswa' : 'Semua Siswa' }}
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="industriTabContent">
+            @if(!$selectedSiswaId)
+                <div class="tab-pane fade {{ $activeTab === 'siswa' ? 'show active' : '' }}" id="siswa" role="tabpanel" aria-labelledby="siswa-tab">
+                    <!-- Siswa PKL Magang Card (Hanya muncul jika belum memfilter siswa) -->
+                    <div class="card card-custom p-4 shadow-sm mb-4">
+                        <h5 class="fw-bold text-dark mb-3"><i class="bi bi-people-fill text-warning me-2"></i> Siswa PKL Magang Aktif</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nama Siswa</th>
+                                        <th>Jurusan</th>
+                                        <th>Tanggal Mulai</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($penugasan as $item)
+                                        <tr>
+                                            <td data-label="Nama Siswa" class="fw-semibold text-dark">
+                                                <a href="{{ route('industri.dashboard', ['siswa_id' => $item->id_siswa_fk]) }}" class="text-decoration-none text-dark hover-primary">
+                                                    {{ $item->siswa->nama_lengkap ?? '-' }} <i class="bi bi-arrow-right-short"></i>
+                                                </a>
+                                            </td>
+                                            <td data-label="Jurusan">{{ $item->siswa->jurusan ?? '-' }}</td>
+                                            <td data-label="Tanggal Mulai">{{ \Carbon\Carbon::parse($item->tgl_mulai_pkl)->format('d M Y') }}</td>
+                                            <td data-label="Status">
+                                                @if($item->status === 'aktif')
+                                                    <span class="badge bg-success-subtle text-success text-capitalize">{{ $item->status }}</span>
+                                                @else
+                                                    <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ $item->status }}</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="text-center py-3 text-muted">Belum ada data siswa magang aktif.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <div class="tab-pane fade {{ $activeTab === 'kehadiran' ? 'show active' : '' }}" id="kehadiran" role="tabpanel" aria-labelledby="kehadiran-tab">
+                <!-- Log Kehadiran Siswa PKL Card -->
+                <div class="card card-custom p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-geo-alt-fill text-danger me-2"></i> 
+                        Log Kehadiran {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
+                            <thead class="table-light">
                                 <tr>
-                                    <td data-label="Nama Siswa" class="fw-semibold text-dark">
-                                        <a href="{{ route('industri.dashboard', ['siswa_id' => $item->id_siswa_fk]) }}" class="text-decoration-none text-dark hover-primary">
-                                            {{ $item->siswa->nama_lengkap ?? '-' }} <i class="bi bi-arrow-right-short"></i>
-                                        </a>
-                                    </td>
-                                    <td data-label="Jurusan">{{ $item->siswa->jurusan ?? '-' }}</td>
-                                    <td data-label="Tanggal Mulai">{{ \Carbon\Carbon::parse($item->tgl_mulai_pkl)->format('d M Y') }}</td>
-                                    <td data-label="Status">
-                                        @if($item->status === 'aktif')
-                                            <span class="badge bg-success-subtle text-success text-capitalize">{{ $item->status }}</span>
-                                        @else
-                                            <span class="badge bg-secondary-subtle text-secondary text-capitalize">{{ $item->status }}</span>
-                                        @endif
-                                    </td>
+                                    <th>Tanggal</th>
+                                    <th>Siswa</th>
+                                    <th>Absen Masuk/Keluar</th>
+                                    <th>Jarak Geofence</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="text-center py-3 text-muted">Belum ada data siswa magang aktif.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @forelse($kehadiran as $k)
+                                    @php
+                                        $pen = $penugasan->where('id_siswa_fk', $k->id_siswa_fk)->first();
+                                        $latOff = $pen && $pen->industri && $pen->industri->latitude ? (float)$pen->industri->latitude : -6.200000;
+                                        $lngOff = $pen && $pen->industri && $pen->industri->longitude ? (float)$pen->industri->longitude : 106.816666;
+                                        $nameOff = $pen && $pen->industri ? $pen->industri->nama_industri : 'Kantor Mitra';
+
+                                        // Parse student coordinates from lokasi_checkin
+                                        $coords = explode(',', $k->lokasi_checkin);
+                                        $latStudent = isset($coords[0]) ? (float)$coords[0] : 0;
+                                        $lonStudent = isset($coords[1]) ? (float)$coords[1] : 0;
+
+                                        // Haversine distance calculation in PHP
+                                        $distance = 0;
+                                        if ($latStudent && $lonStudent) {
+                                            $earthRadius = 6371000;
+                                            $latDelta = deg2rad($latOff - $latStudent);
+                                            $lonDelta = deg2rad($lngOff - $lonStudent);
+                                            $a = sin($latDelta / 2) * sin($latDelta / 2) +
+                                                 cos(deg2rad($latStudent)) * cos(deg2rad($latOff)) *
+                                                 sin($lonDelta / 2) * sin($lonDelta / 2);
+                                            $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+                                            $distance = $earthRadius * $c;
+                                        }
+                                    @endphp
+                                    <tr>
+                                        <td data-label="Tanggal">{{ \Carbon\Carbon::parse($k->tgl_absen)->format('d M Y') }}</td>
+                                        <td data-label="Siswa" class="fw-semibold text-dark">{{ $k->siswa->nama_lengkap ?? '-' }}</td>
+                                        <td data-label="Absen Masuk/Keluar">
+                                            <span class="text-success"><i class="bi bi-box-arrow-in-right"></i> {{ $k->waktu_checkin ?? '-' }}</span><br>
+                                            <span class="text-danger"><i class="bi bi-box-arrow-out-right"></i> {{ $k->waktu_checkout ?? '-' }}</span>
+                                        </td>
+                                        <td data-label="Jarak Geofence">
+                                            @if($latStudent && $lonStudent)
+                                                <span class="fw-bold">{{ number_format($distance, 1) }} m</span><br>
+                                                @if($distance <= 100)
+                                                    <span class="badge bg-success-subtle text-success" style="font-size: 0.7rem;">Valid</span>
+                                                @else
+                                                    <span class="badge bg-danger-subtle text-danger" style="font-size: 0.7rem;">Luar Batas</span>
+                                                @endif
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td data-label="Aksi" class="text-center">
+                                            @if($latStudent && $lonStudent)
+                                                <button class="btn btn-outline-dark btn-sm rounded-pill px-2 py-0.5" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#mapModal"
+                                                    data-student-name="{{ $k->siswa->nama_lengkap }}"
+                                                    data-student-lat="{{ $latStudent }}"
+                                                    data-student-lon="{{ $lonStudent }}"
+                                                    data-office-lat="{{ $latOff }}"
+                                                    data-office-lon="{{ $lngOff }}"
+                                                    data-office-name="{{ $nameOff }}"
+                                                    data-distance="{{ $distance }}">
+                                                    <i class="bi bi-map"></i> Peta
+                                                </button>
+                                            @else
+                                                <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3 text-muted">Belum ada log absensi siswa.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        @endif
 
-        <!-- Log Kehadiran Siswa PKL Card -->
-        <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3">
-                <i class="bi bi-geo-alt-fill text-danger me-2"></i> 
-                Log Kehadiran {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
-            </h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Siswa</th>
-                            <th>Absen Masuk/Keluar</th>
-                            <th>Jarak Geofence</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($kehadiran as $k)
-                            @php
-                                $pen = $penugasan->where('id_siswa_fk', $k->id_siswa_fk)->first();
-                                $latOff = $pen && $pen->industri && $pen->industri->latitude ? (float)$pen->industri->latitude : -6.200000;
-                                $lngOff = $pen && $pen->industri && $pen->industri->longitude ? (float)$pen->industri->longitude : 106.816666;
-                                $nameOff = $pen && $pen->industri ? $pen->industri->nama_industri : 'Kantor Mitra';
-
-                                // Parse student coordinates from lokasi_checkin
-                                $coords = explode(',', $k->lokasi_checkin);
-                                $latStudent = isset($coords[0]) ? (float)$coords[0] : 0;
-                                $lonStudent = isset($coords[1]) ? (float)$coords[1] : 0;
-
-                                // Haversine distance calculation in PHP
-                                $distance = 0;
-                                if ($latStudent && $lonStudent) {
-                                    $earthRadius = 6371000;
-                                    $latDelta = deg2rad($latOff - $latStudent);
-                                    $lonDelta = deg2rad($lngOff - $lonStudent);
-                                    $a = sin($latDelta / 2) * sin($latDelta / 2) +
-                                         cos(deg2rad($latStudent)) * cos(deg2rad($latOff)) *
-                                         sin($lonDelta / 2) * sin($lonDelta / 2);
-                                    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-                                    $distance = $earthRadius * $c;
-                                }
-                            @endphp
-                            <tr>
-                                <td data-label="Tanggal">{{ \Carbon\Carbon::parse($k->tgl_absen)->format('d M Y') }}</td>
-                                <td data-label="Siswa" class="fw-semibold text-dark">{{ $k->siswa->nama_lengkap ?? '-' }}</td>
-                                <td data-label="Absen Masuk/Keluar">
-                                    <span class="text-success"><i class="bi bi-box-arrow-in-right"></i> {{ $k->waktu_checkin ?? '-' }}</span><br>
-                                    <span class="text-danger"><i class="bi bi-box-arrow-out-right"></i> {{ $k->waktu_checkout ?? '-' }}</span>
-                                </td>
-                                <td data-label="Jarak Geofence">
-                                    @if($latStudent && $lonStudent)
-                                        <span class="fw-bold">{{ number_format($distance, 1) }} m</span><br>
-                                        @if($distance <= 100)
-                                            <span class="badge bg-success-subtle text-success" style="font-size: 0.7rem;">Valid</span>
-                                        @else
-                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.7rem;">Luar Batas</span>
-                                        @endif
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
-                                <td data-label="Aksi" class="text-center">
-                                    @if($latStudent && $lonStudent)
-                                        <button class="btn btn-outline-dark btn-sm rounded-pill px-2 py-0.5" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#mapModal"
-                                            data-student-name="{{ $k->siswa->nama_lengkap }}"
-                                            data-student-lat="{{ $latStudent }}"
-                                            data-student-lon="{{ $lonStudent }}"
-                                            data-office-lat="{{ $latOff }}"
-                                            data-office-lon="{{ $lngOff }}"
-                                            data-office-name="{{ $nameOff }}"
-                                            data-distance="{{ $distance }}">
-                                            <i class="bi bi-map"></i> Peta
-                                        </button>
-                                    @else
-                                        <span class="text-muted small">-</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center py-3 text-muted">Belum ada log absensi siswa.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Jurnal Laporan Harian Siswa Card -->
-        <div class="card card-custom p-4 shadow-sm mb-4">
-            <h5 class="fw-bold text-dark mb-3">
-                <i class="bi bi-journal-richtext text-primary me-2"></i> 
-                Jurnal Harian {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
-            </h5>
-            <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm table-responsive-stack" style="font-size: 0.85rem;">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Siswa</th>
-                            <th>Aktivitas & Hasil</th>
-                            <th>Lampiran</th>
-                            <th>Status</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($laporanJurnal as $jurnal)
-                            <tr>
-                                <td data-label="Tanggal">{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}</td>
-                                <td data-label="Siswa" class="fw-semibold text-dark">{{ $jurnal->siswa->nama_lengkap ?? '-' }}</td>
-                                <td data-label="Aktivitas & Hasil">
-                                    <span class="text-dark d-block fw-medium">{{ Str::limit($jurnal->aktivitas_pekerjaan, 50) }}</span>
-                                    <small class="text-muted d-block">Hasil: {{ Str::limit($jurnal->hasil_pekerjaan, 40) }}</small>
-                                    <div class="mt-1">
-                                        <span class="badge bg-success-subtle text-success" style="font-size: 0.72rem;">Nilai DUDI: {{ $jurnal->nilai_dudi ?? 'Belum' }}</span>
-                                        <span class="badge bg-info-subtle text-info" style="font-size: 0.72rem;">Nilai Guru: {{ $jurnal->nilai_guru ?? 'Belum' }}</span>
-                                    </div>
-                                </td>
-                                <td data-label="Lampiran">
-                                    @if($jurnal->file_lampiran)
-                                        <a href="{{ asset($jurnal->file_lampiran) }}" target="_blank" class="btn btn-outline-dark btn-xs px-2 py-0.5 rounded-pill text-decoration-none">
-                                            <i class="bi bi-download"></i> Unduh
-                                        </a>
-                                    @else
-                                        <span class="text-muted small">-</span>
-                                    @endif
-                                </td>
-                                <td data-label="Status">
-                                    @if($jurnal->status === 'approved')
-                                        <span class="badge bg-success-subtle text-success">Disetujui</span>
-                                    @elseif($jurnal->status === 'rejected')
-                                        <span class="badge bg-danger-subtle text-danger">Ditolak</span>
-                                    @else
-                                        <span class="badge bg-warning-subtle text-warning">Pending</span>
-                                    @endif
-                                </td>
-                                <td data-label="Aksi" class="text-center">
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0.5"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#reviewModal"
-                                        data-id="{{ $jurnal->id_laporan }}"
-                                        data-student-name="{{ $jurnal->siswa->nama_lengkap }}"
-                                        data-date="{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}"
-                                        data-activity="{{ $jurnal->aktivitas_pekerjaan }}"
-                                        data-output="{{ $jurnal->hasil_pekerjaan ?? '-' }}"
-                                        data-skills="{{ $jurnal->skill_dipraktikkan ?? '-' }}"
-                                        data-feedback="{{ $jurnal->feedback_pembimbing }}"
-                                        data-status="{{ $jurnal->status ?? 'approved' }}"
-                                        data-nilai="{{ $jurnal->nilai_dudi }}">
-                                        <i class="bi bi-pencil-square"></i> Review
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-3 text-muted">Belum ada laporan jurnal harian dari siswa.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="tab-pane fade {{ $activeTab === 'jurnal' ? 'show active' : '' }}" id="jurnal" role="tabpanel" aria-labelledby="jurnal-tab">
+                <!-- Jurnal Laporan Harian Siswa Card -->
+                <div class="card card-custom p-4 shadow-sm mb-4">
+                    <h5 class="fw-bold text-dark mb-3">
+                        <i class="bi bi-journal-richtext text-primary me-2"></i> 
+                        Jurnal Harian {{ $selectedSiswa ? 'Siswa: ' . $selectedSiswa->nama_lengkap : 'Semua Siswa PKL' }}
+                    </h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-sm table-responsive-stack datatable" style="font-size: 0.85rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Siswa</th>
+                                    <th>Aktivitas & Hasil</th>
+                                    <th>Lampiran</th>
+                                    <th>Status</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($laporanJurnal as $jurnal)
+                                    <tr>
+                                        <td data-label="Tanggal">{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}</td>
+                                        <td data-label="Siswa" class="fw-semibold text-dark">{{ $jurnal->siswa->nama_lengkap ?? '-' }}</td>
+                                        <td data-label="Aktivitas & Hasil">
+                                            <span class="text-dark d-block fw-medium">{{ Str::limit($jurnal->aktivitas_pekerjaan, 50) }}</span>
+                                            <small class="text-muted d-block">Hasil: {{ Str::limit($jurnal->hasil_pekerjaan, 40) }}</small>
+                                            <div class="mt-1">
+                                                <span class="badge bg-success-subtle text-success" style="font-size: 0.72rem;">Nilai DUDI: {{ $jurnal->nilai_dudi ?? 'Belum' }}</span>
+                                                <span class="badge bg-info-subtle text-info" style="font-size: 0.72rem;">Nilai Guru: {{ $jurnal->nilai_guru ?? 'Belum' }}</span>
+                                            </div>
+                                        </td>
+                                        <td data-label="Lampiran">
+                                            @if($jurnal->file_lampiran)
+                                                <a href="{{ asset($jurnal->file_lampiran) }}" target="_blank" class="btn btn-outline-dark btn-xs px-2 py-0.5 rounded-pill text-decoration-none">
+                                                    <i class="bi bi-download"></i> Unduh
+                                                </a>
+                                            @else
+                                                <span class="text-muted small">-</span>
+                                            @endif
+                                        </td>
+                                        <td data-label="Status">
+                                            @if($jurnal->status === 'approved')
+                                                <span class="badge bg-success-subtle text-success">Disetujui</span>
+                                            @elseif($jurnal->status === 'rejected')
+                                                <span class="badge bg-danger-subtle text-danger">Ditolak</span>
+                                            @else
+                                                <span class="badge bg-warning-subtle text-warning">Pending</span>
+                                            @endif
+                                        </td>
+                                        <td data-label="Aksi" class="text-center">
+                                            <button class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0.5"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#reviewModal"
+                                                data-id="{{ $jurnal->id_laporan }}"
+                                                data-student-name="{{ $jurnal->siswa->nama_lengkap }}"
+                                                data-date="{{ \Carbon\Carbon::parse($jurnal->tgl_laporan)->format('d M Y') }}"
+                                                data-activity="{{ $jurnal->aktivitas_pekerjaan }}"
+                                                data-output="{{ $jurnal->hasil_pekerjaan ?? '-' }}"
+                                                data-skills="{{ $jurnal->skill_dipraktikkan ?? '-' }}"
+                                                data-feedback="{{ $jurnal->feedback_pembimbing }}"
+                                                data-status="{{ $jurnal->status ?? 'approved' }}"
+                                                data-nilai="{{ $jurnal->nilai_dudi }}">
+                                                <i class="bi bi-pencil-square"></i> Review
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="6" class="text-center py-3 text-muted">Belum ada laporan jurnal harian dari siswa.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -512,6 +609,47 @@
             // Set dynamic action URL
             var form = document.getElementById('reviewForm');
             form.setAttribute('action', '/laporan/review/' + id);
+        });
+
+        // Tab synchronization with URL and DataTables adjustment
+        var tabElList = document.querySelectorAll('button[data-bs-toggle="tab"]');
+        tabElList.forEach(function(el) {
+            el.addEventListener('shown.bs.tab', function (event) {
+                var targetId = event.target.getAttribute('data-bs-target').replace('#', '');
+                var filterTabInput = document.getElementById('filter-tab-input');
+                if (filterTabInput) {
+                    filterTabInput.value = targetId;
+                }
+                
+                // Update URL parameter without reload
+                var url = new URL(window.location);
+                url.searchParams.set('tab', targetId);
+                window.history.pushState({}, '', url);
+
+                // Fix DataTables alignment in the newly shown tab
+                if ($.fn.dataTable) {
+                    $(event.target.getAttribute('data-bs-target') + ' table.dataTable').each(function() {
+                        if ($.fn.dataTable.isDataTable(this)) {
+                            $(this).DataTable().columns.adjust().responsive.recalc();
+                        }
+                    });
+                }
+            });
+        });
+
+        // Universal form submit loading handler
+        document.querySelectorAll('form').forEach(function(form) {
+            form.addEventListener('submit', function() {
+                var submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    setTimeout(function() {
+                        submitBtn.disabled = true;
+                    }, 0);
+                    
+                    var text = submitBtn.innerText.trim();
+                    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> ' + text + '...';
+                }
+            });
         });
     });
 </script>

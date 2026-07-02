@@ -7,6 +7,7 @@ use App\Models\Kehadiran;
 use App\Models\Penugasan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
 class KehadiranController extends Controller
@@ -19,7 +20,7 @@ class KehadiranController extends Controller
         $request->validate([
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'bukti_foto' => 'required|image|max:2048', // Maks 2MB
+            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048', // Maks 2MB
             'status_kehadiran' => 'required|in:hadir,izin,sakit',
             'keterangan_izin' => 'nullable|string',
         ]);
@@ -77,8 +78,7 @@ class KehadiranController extends Controller
         if ($request->hasFile('bukti_foto')) {
             $foto = $request->file('bukti_foto');
             $fotoName = 'checkin_' . $siswa->id_siswa . '_' . time() . '.' . $foto->getClientOriginalExtension();
-            $foto->move(public_path('uploads/absensi'), $fotoName);
-            $fotoPath = 'uploads/absensi/' . $fotoName;
+            $fotoPath = 'storage/' . Storage::disk('public')->putFileAs('uploads/absensi', $foto, $fotoName);
         }
 
         // 4. Buat Record Absensi
@@ -100,7 +100,7 @@ class KehadiranController extends Controller
     public function checkOut(Request $request)
     {
         $request->validate([
-            'bukti_foto' => 'required|image|max:2048',
+            'bukti_foto' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
         $user = Auth::user();
@@ -125,13 +125,17 @@ class KehadiranController extends Controller
             return back()->withErrors(['error' => 'Anda sudah melakukan absensi keluar hari ini.']);
         }
 
+        // BUG-5 fix: Hanya status 'hadir' yang bisa checkout
+        if ($kehadiran->status_kehadiran !== 'hadir') {
+            return back()->withErrors(['error' => 'Checkout hanya berlaku untuk status kehadiran Hadir. Status Anda saat ini: ' . ucfirst($kehadiran->status_kehadiran) . '.']);
+        }
+
         // 1. Simpan Foto Checkout
         $fotoPath = null;
         if ($request->hasFile('bukti_foto')) {
             $foto = $request->file('bukti_foto');
             $fotoName = 'checkout_' . $siswa->id_siswa . '_' . time() . '.' . $foto->getClientOriginalExtension();
-            $foto->move(public_path('uploads/absensi'), $fotoName);
-            $fotoPath = 'uploads/absensi/' . $fotoName;
+            $fotoPath = 'storage/' . Storage::disk('public')->putFileAs('uploads/absensi', $foto, $fotoName);
         }
 
         // 2. Hitung Jam Kerja Riil

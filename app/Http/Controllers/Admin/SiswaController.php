@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Siswa;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -36,8 +37,8 @@ class SiswaController extends Controller
 
         $siswa = $siswaQuery->get()->groupBy('jurusan');
 
-        $masterKelas = \App\Models\Kelas::all();
-        $tahunAjaranList = \App\Models\Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
+        $masterKelas = Kelas::all();
+        $tahunAjaranList = Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
 
         return view('admin.siswa.index', compact('siswa', 'search', 'masterKelas', 'tahunAjaranList', 'selectedTahun'));
     }
@@ -57,7 +58,7 @@ class SiswaController extends Controller
             'no_hp_orang_tua' => 'nullable|string|max:15',
         ]);
 
-        $kelasObj = \App\Models\Kelas::findOrFail($request->id_kelas_fk);
+        $kelasObj = Kelas::findOrFail($request->id_kelas_fk);
 
         DB::beginTransaction();
 
@@ -117,7 +118,7 @@ class SiswaController extends Controller
             'status' => 'required|in:aktif,selesai,dropout',
         ]);
 
-        $kelasObj = \App\Models\Kelas::findOrFail($request->id_kelas_fk);
+        $kelasObj = Kelas::findOrFail($request->id_kelas_fk);
 
         DB::beginTransaction();
 
@@ -165,6 +166,11 @@ class SiswaController extends Controller
     public function destroy($id)
     {
         $siswa = Siswa::findOrFail($id);
+
+        // BUG-9 fix: Cek apakah siswa memiliki data penugasan terkait
+        if ($siswa->penugasan()->exists()) {
+            return back()->withErrors(['error' => 'Tidak dapat menghapus siswa yang sudah memiliki penugasan PKL. Ubah status siswa menjadi "dropout" atau nonaktifkan terlebih dahulu.']);
+        }
 
         DB::beginTransaction();
 

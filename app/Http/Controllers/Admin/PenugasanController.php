@@ -7,6 +7,7 @@ use App\Models\Penugasan;
 use App\Models\Siswa;
 use App\Models\Industri;
 use App\Models\User;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -49,7 +50,7 @@ class PenugasanController extends Controller
         $industri = Industri::where('status', 'aktif')->get();
         $pembimbing = User::role('pembimbing')->where('status', 'aktif')->get();
         $pembimbingIndustri = User::role('industri')->where('status', 'aktif')->get();
-        $tahunAjaranList = \App\Models\Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
+        $tahunAjaranList = Kelas::select('tahun_ajaran')->distinct()->pluck('tahun_ajaran');
 
         return view('admin.penugasan.index', compact('penugasan', 'siswa', 'allSiswa', 'industri', 'pembimbing', 'pembimbingIndustri', 'search', 'tahunAjaranList', 'selectedTahun'));
     }
@@ -70,35 +71,61 @@ class PenugasanController extends Controller
             'catatan' => 'nullable|string',
         ]);
 
+        // BUG-E fix: Verifikasi peran pengguna pembimbing dan industri
+        $pembimbingUser = User::find($request->id_pembimbing_fk);
+        if ($pembimbingUser && !$pembimbingUser->hasRole('pembimbing')) {
+            return back()->withErrors(['id_pembimbing_fk' => 'Pengguna pembimbing yang dipilih tidak memiliki peran pembimbing sekolah.'])->withInput();
+        }
+
+        $industriUser = User::find($request->id_pengguna_industri_fk);
+        if ($industriUser && !$industriUser->hasRole('industri')) {
+            return back()->withErrors(['id_pengguna_industri_fk' => 'Pengguna industri yang dipilih tidak memiliki peran pembimbing industri.'])->withInput();
+        }
+
         // Hitung otomatis durasi hari pkl
         $tglMulai = Carbon::parse($request->tgl_mulai_pkl);
         $tglSelesai = Carbon::parse($request->tgl_selesai_pkl);
         $durasiHari = $tglMulai->diffInDays($tglSelesai) + 1;
 
         $siswaIds = $request->id_siswa_fk;
+        $created = 0;
+        $skipped = [];
+
         foreach ($siswaIds as $siswaId) {
-            Penugasan::updateOrCreate(
-                [
-                    'id_siswa_fk' => $siswaId,
-                    'status' => 'aktif'
-                ],
-                [
-                    'id_industri_fk' => $request->id_industri_fk,
-                    'id_pembimbing_fk' => $request->id_pembimbing_fk,
-                    'id_pengguna_industri_fk' => $request->id_pengguna_industri_fk,
-                    'tgl_mulai_pkl' => $request->tgl_mulai_pkl,
-                    'tgl_selesai_pkl' => $request->tgl_selesai_pkl,
-                    'durasi_hari' => $durasiHari,
-                    'lokasi_kerja' => $request->lokasi_kerja,
-                    'divisi_departemen' => $request->divisi_departemen,
-                    'pembimbing_industri' => $request->pembimbing_industri,
-                    'status' => $request->status,
-                    'catatan' => $request->catatan,
-                ]
-            );
+            // BUG-18 fix: Cek apakah siswa sudah memiliki penugasan aktif
+            $existingAktif = Penugasan::where('id_siswa_fk', $siswaId)
+                ->where('status', 'aktif')
+                ->first();
+
+            if ($existingAktif) {
+                $siswaObj = Siswa::find($siswaId);
+                $skipped[] = $siswaObj ? $siswaObj->nama_lengkap : "ID: {$siswaId}";
+                continue;
+            }
+
+            Penugasan::create([
+                'id_siswa_fk' => $siswaId,
+                'id_industri_fk' => $request->id_industri_fk,
+                'id_pembimbing_fk' => $request->id_pembimbing_fk,
+                'id_pengguna_industri_fk' => $request->id_pengguna_industri_fk,
+                'tgl_mulai_pkl' => $request->tgl_mulai_pkl,
+                'tgl_selesai_pkl' => $request->tgl_selesai_pkl,
+                'durasi_hari' => $durasiHari,
+                'lokasi_kerja' => $request->lokasi_kerja,
+                'divisi_departemen' => $request->divisi_departemen,
+                'pembimbing_industri' => $request->pembimbing_industri,
+                'status' => $request->status,
+                'catatan' => $request->catatan,
+            ]);
+            $created++;
         }
 
-        return redirect()->route('penugasan.index')->with('success', count($siswaIds) . ' Alokasi penugasan PKL siswa berhasil dibuat.');
+        $message = "{$created} Alokasi penugasan PKL siswa berhasil dibuat.";
+        if (!empty($skipped)) {
+            $message .= ' Dilewati karena sudah memiliki penugasan aktif: ' . implode(', ', $skipped) . '.';
+        }
+
+        return redirect()->route('penugasan.index')->with('success', $message);
     }
 
     public function update(Request $request, $id)
@@ -118,6 +145,17 @@ class PenugasanController extends Controller
             'status' => 'required|in:aktif,selesai,batal,on_leave',
             'catatan' => 'nullable|string',
         ]);
+
+        // BUG-E fix: Verifikasi peran pengguna pembimbing dan industri
+        $pembimbingUser = User::find($request->id_pembimbing_fk);
+        if ($pembimbingUser && !$pembimbingUser->hasRole('pembimbing')) {
+            return back()->withErrors(['id_pembimbing_fk' => 'Pengguna pembimbing yang dipilih tidak memiliki peran pembimbing sekolah.'])->withInput();
+        }
+
+        $industriUser = User::find($request->id_pengguna_industri_fk);
+        if ($industriUser && !$industriUser->hasRole('industri')) {
+            return back()->withErrors(['id_pengguna_industri_fk' => 'Pengguna industri yang dipilih tidak memiliki peran pembimbing industri.'])->withInput();
+        }
 
         // Hitung otomatis durasi hari pkl
         $tglMulai = Carbon::parse($request->tgl_mulai_pkl);
@@ -145,6 +183,12 @@ class PenugasanController extends Controller
     public function destroy($id)
     {
         $penugasan = Penugasan::findOrFail($id);
+
+        // BUG-10 fix: Cek apakah penugasan memiliki data kehadiran atau laporan terkait
+        if ($penugasan->kehadiran()->exists() || $penugasan->laporanHarian()->exists()) {
+            return back()->withErrors(['error' => 'Penugasan tidak dapat dihapus karena sudah memiliki data kehadiran atau jurnal harian. Ubah status penugasan menjadi "batal" sebagai gantinya.']);
+        }
+
         $penugasan->delete();
 
         return redirect()->route('penugasan.index')->with('success', 'Penugasan PKL siswa berhasil dihapus.');
